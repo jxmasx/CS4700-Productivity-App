@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Questify – Shop</title>
+  <link rel="stylesheet" href="styles/layout.css" />
+  <style>
+
+    :root {
+      --bg: #f2c988;            /*Board parchment */
+      --bg-deep: #e9b76d;
+      --wood: #6e3f1c;
+      --wood-dark: #4f2c10;
+      --green: #3ca65c;
+      --shadow: 0 10px 24px rgba(0,0,0,.25);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0;background:linear-gradient(180deg,#f9efe2,#f5e4c8);font-family:ui-rounded,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;color:#2d1b0e;display:grid;place-items:center}
+
+    .board-wrap{width:min(1200px,94vw);aspect-ratio:16/9;position:relative;padding:clamp(14px,2.2vw,28px);filter:drop-shadow(var(--shadow))}
+    .board-frame{position:absolute;inset:0;border-radius:28px;background:radial-gradient(120% 120% at 0% 0%,#855028 0 30%,transparent 31%) top left/32% 32% no-repeat,radial-gradient(120% 120% at 100% 0%,#855028 0 30%,transparent 31%) top right/32% 32% no-repeat,radial-gradient(120% 120% at 0% 100%,#855028 0 30%,transparent 31%) bottom left/32% 32% no-repeat,radial-gradient(120% 120% at 100% 100%,#855028 0 30%,transparent 31%) bottom right/32% 32% no-repeat,linear-gradient(90deg,var(--wood-dark),var(--wood));box-shadow:inset 0 0 0 16px #7b4a25,inset 0 0 0 32px #90582b}
+    .board{position:absolute;inset:22px;background:radial-gradient(100% 70% at 50% 0%,#f7d89f 0 40%,transparent 41%),radial-gradient(100% 120% at 50% 100%,#f2d094 0 40%,transparent 41%),linear-gradient(180deg,var(--bg) 0%,var(--bg-deep) 100%);border-radius:18px}
+
+    .banner{position:absolute;left:50%;top:0;transform:translate(-50%,-40%);display:flex;align-items:center;gap:10px}
+    .leaf{width:clamp(40px,6vw,64px);height:clamp(28px,4.5vw,48px);background:var(--green);border-radius:50% 50% 6px 50%/60% 50% 6px 40%;filter:drop-shadow(0 4px 0 rgba(0,0,0,.15))}
+    .title-wood{background:linear-gradient(#5e3517,#3f220e);color:#fffaf1;border-radius:16px;padding:clamp(10px,1.5vw,16px) clamp(22px,3vw,36px);font-weight:800;letter-spacing:1px;font-size:clamp(22px,3.4vw,44px);box-shadow:inset 0 -6px rgba(0,0,0,.25),0 10px 16px rgba(0,0,0,.25)}
+
+    /*Top bar*/
+    .topbar{position:absolute;right:clamp(22px,3vw,36px);top:clamp(18px,2.4vw,28px);display:flex;gap:10px;align-items:center}
+    .pill{display:flex;align-items:center;gap:8px;background:#fff7eb;border:2px solid #e9d7b9;border-radius:999px;padding:6px 12px;font-weight:800;box-shadow:0 4px 10px rgba(0,0,0,.12)}
+    .coin{width:18px;height:18px;border-radius:50%;background:radial-gradient(circle,#ffd34d,#eab308)}
+    .gem{width:0;height:0;border-left:9px solid transparent;border-right:9px solid transparent;border-bottom:18px solid #60a5fa;filter:drop-shadow(0 2px 0 rgba(0,0,0,.18))}
+
+    /*Filters*/
+    .filters{position:absolute;left:clamp(28px,4vw,60px);top:clamp(18px,2.4vw,28px);display:flex;gap:8px}
+    .chip{border:0;border-radius:999px;padding:8px 12px;background:#2f241a;color:#fff7e8;font-weight:700;cursor:pointer;box-shadow:0 4px 10px rgba(0,0,0,.2);opacity:.9}
+    .chip[aria-pressed="true"]{outline:3px solid #8b5e34}
+
+    /*Grid*/
+    .grid{position:absolute;inset:clamp(90px,11vh,130px) clamp(28px,4vw,60px) clamp(80px,10vh,110px);display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:1fr;gap:clamp(12px,2vw,20px)}
+    @media (max-width:1100px){.grid{grid-template-columns:repeat(3,1fr)}}
+    @media (max-width:760px){.grid{grid-template-columns:repeat(2,1fr)}}
+
+    .item{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:space-between;background:#fff;border-radius:16px;padding:12px;border:3px solid #b8e994;box-shadow:0 8px 16px rgba(0,0,0,.15)}
+    .item h4{margin:4px 0 6px;font-size:clamp(12px,1.1vw,16px);text-align:center}
+    .thumb{width:100%;aspect-ratio:1;border-radius:12px;background:repeating-linear-gradient(45deg,#f7f7f7 0 10px,#efefef 10px 20px);border:2px dashed #d1d5db}
+    .cost{position:absolute;bottom:-12px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:8px;background:#e1f5d5;border:3px solid #8ad17e;border-radius:999px;padding:4px 10px;font-weight:800}
+    .buy{margin-top:18px;border:0;border-radius:10px;padding:8px 12px;background:#2f241a;color:#fff7e8;font-weight:800;cursor:pointer}
+
+    .nav{position:absolute;bottom:clamp(18px,2.2vw,28px);width:100%;display:flex;justify-content:space-between;align-items:center;padding:0 clamp(22px,3vw,40px)}
+    .circle-btn{width:clamp(54px,6.6vw,72px);aspect-ratio:1;border-radius:50%;border:none;cursor:pointer;background:#111;color:#fff;display:grid;place-items:center;font-size:clamp(22px,2.6vw,32px);box-shadow:0 8px 16px rgba(0,0,0,.35)}
+    .page-indicator{font-weight:800;letter-spacing:.08em;opacity:.7}
+
+    /*Dialog & Ledger*/
+    dialog{border:0;border-radius:16px;padding:18px;max-width:min(560px,92vw);box-shadow:0 20px 60px rgba(0,0,0,.35)}
+    dialog::backdrop{background:rgba(0,0,0,.35)}
+    .field{display:grid;gap:6px;margin:10px 0}
+    .field input,.field select{padding:10px;border-radius:10px;border:2px solid #ddd}
+    .actions{display:flex;gap:10px;justify-content:flex-end;margin-top:12px}
+
+    .ledger{position:absolute;right:clamp(22px,3vw,36px);bottom:clamp(18px,2.2vw,28px);display:flex;gap:8px}
+    .panel{position:absolute;right:clamp(22px,3vw,36px);bottom:calc(64px + clamp(18px,2.2vw,28px));width:min(360px,80vw);max-height:46vh;overflow:auto;background:#fffaf1;border:3px solid #e8d7b9;border-radius:16px;box-shadow:0 12px 24px rgba(0,0,0,.2);padding:12px;display:none}
+    .panel h3{margin:0 0 6px}
+    .log{display:grid;gap:8px}
+    .log-item{display:flex;justify-content:space-between;border-bottom:1px dashed #e5d3b5;padding-bottom:6px}
+  </style>
+</head>
+<body>
+  <div class="board-wrap" role="application" aria-label="Shop">
+    <div class="board-frame" aria-hidden="true"></div>
+    <div class="board" aria-hidden="true"></div>
+
+    <div class="banner" aria-hidden="true">
+      <div class="leaf" style="transform: rotate(-18deg)"></div>
+      <div class="title-wood">Shop</div>
+      <div class="leaf" style="transform: rotate(18deg) scaleX(-1)"></div>
+    </div>
+
+    <div class="filters" role="toolbar" aria-label="Shop filters">
+      <button class="chip" data-filter="all" aria-pressed="true">All</button>
+      <button class="chip" data-filter="general">General</button>
+      <button class="chip" data-filter="custom">Custom</button>
+      <button class="chip" id="addCustomBtn">+ Custom Reward</button>
+    </div>
+
+    <div class="topbar">
+      <div class="pill" id="goldPill"><span class="coin"></span><span id="gold">0</span></div>
+      <div class="pill" id="diamondPill"><span class="gem"></span><span id="diamonds">0</span></div>
+    </div>
+
+    <section class="grid" id="grid" aria-live="polite"></section>
+
+    <div class="nav">
+      <button class="circle-btn" id="prevBtn" aria-label="Previous page">&#8592;</button>
+      <div class="page-indicator" id="pageIndicator">1 / 1</div>
+      <button class="circle-btn" id="nextBtn" aria-label="Next page">&#8594;</button>
+    </div>
+
+    <div class="ledger">
+      <button class="chip" id="toggleLedger">Guild Ledger</button>
+    </div>
+    <aside class="panel" id="ledgerPanel" aria-label="Guild ledger panel">
+      <h3>Guild Ledger</h3>
+      <div class="log" id="log"></div>
+    </aside>
+  </div>
+
+  <!-- Add Custom Reward Dialog -->
+  <dialog id="customDialog">
+    <form method="dialog" id="customForm">
+      <h3>Add Custom Reward</h3>
+      <div class="field">
+        <label for="cname">Name</label>
+        <input id="cname" name="name" required maxlength="40" placeholder="e.g., Coffee break" />
+      </div>
+      <div class="field">
+        <label for="ccost">Cost</label>
+        <input id="ccost" name="cost" type="number" min="1" step="1" required value="50" />
+      </div>
+      <div class="field">
+        <label for="ccurrency">Currency</label>
+        <select id="ccurrency" name="currency">
+          <option value="gold">Gold</option>
+          <option value="diamonds">Diamonds</option>
+        </select>
+      </div>
+      <div class="actions">
+        <button value="cancel" class="chip">Cancel</button>
+        <button value="default" class="chip">Save</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script>
+    // -------------------------
+    // Data & simple persistence !!Will have to be changed later!!
+    // -------------------------
+    const PER_PAGE = 8;
+    const STORE_KEYS = {
+      gold: 'qf_gold', diamonds: 'qf_diamonds', custom: 'qf_custom_rewards', ledger: 'qf_ledger'
+    };
+    const initialGold = Number(localStorage.getItem(STORE_KEYS.gold)) || 250;
+    const initialDiamonds = Number(localStorage.getItem(STORE_KEYS.diamonds)) || 5;
+
+    const generalRewards = [
+      { id: 'g1', name: 'Outfit: Forest Cloak', cost: 120, currency: 'gold' },
+      { id: 'g2', name: 'Weapon: Bronze Sword', cost: 150, currency: 'gold' },
+      { id: 'g3', name: 'Armor: Leather Set', cost: 180, currency: 'gold' },
+      { id: 'g4', name: 'Pet: Baby Dragon', cost: 4, currency: 'diamonds' },
+      { id: 'g5', name: 'Outfit: Scholar Robes', cost: 140, currency: 'gold' },
+      { id: 'g6', name: 'Weapon: Oak Staff', cost: 2, currency: 'diamonds' },
+      { id: 'g7', name: 'Armor: Mystic Shield', cost: 220, currency: 'gold' },
+      { id: 'g8', name: 'Pet: Forest Fox', cost: 3, currency: 'diamonds' },
+      { id: 'g9', name: 'Voucher: Study Snack', cost: 60, currency: 'gold' },
+      { id: 'g10', name: 'Potion Bundle', cost: 90, currency: 'gold' },
+    ];
+
+    let state = {
+      gold: initialGold,
+      diamonds: initialDiamonds,
+      filter: 'all',
+      page: 1,
+      customRewards: JSON.parse(localStorage.getItem(STORE_KEYS.custom) || '[]'),
+      ledger: JSON.parse(localStorage.getItem(STORE_KEYS.ledger) || '[]')
+    };
+
+    // -------------------------
+    // Helpers & rendering
+    // -------------------------
+    const grid = document.getElementById('grid');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const pageIndicator = document.getElementById('pageIndicator');
+    const goldEl = document.getElementById('gold');
+    const diamondEl = document.getElementById('diamonds');
+    const chips = [...document.querySelectorAll('.chip[data-filter]')];
+    const addCustomBtn = document.getElementById('addCustomBtn');
+    const dlg = document.getElementById('customDialog');
+    const form = document.getElementById('customForm');
+    const ledgerBtn = document.getElementById('toggleLedger');
+    const ledgerPanel = document.getElementById('ledgerPanel');
+    const logEl = document.getElementById('log');
+
+    function save() {
+      localStorage.setItem(STORE_KEYS.gold, state.gold);
+      localStorage.setItem(STORE_KEYS.diamonds, state.diamonds);
+      localStorage.setItem(STORE_KEYS.custom, JSON.stringify(state.customRewards));
+      localStorage.setItem(STORE_KEYS.ledger, JSON.stringify(state.ledger));
+    }
+
+    function currencyBadge(item){
+      return item.currency === 'gold'
+        ? `<span class="coin"></span>${item.cost}`
+        : `<span class="gem"></span>${item.cost}`;
+    }
+
+    function currentList(){
+      if(state.filter==='general') return generalRewards;
+      if(state.filter==='custom') return state.customRewards;
+      return [...generalRewards, ...state.customRewards];
+    }
+
+    function totalPages(){
+      return Math.max(1, Math.ceil(currentList().length / PER_PAGE));
+    }
+
+    function sliceForPage(p){
+      const start = (p-1)*PER_PAGE; return currentList().slice(start, start+PER_PAGE);
+    }
+
+    function renderBalances(){
+      goldEl.textContent = state.gold;
+      diamondEl.textContent = state.diamonds;
+    }
+
+    function renderLedger(){
+      logEl.innerHTML = state.ledger.map(e => `
+        <div class="log-item">
+          <span>${e.when} – ${e.action}</span>
+          <strong>${e.delta}</strong>
+        </div>`).join('');
+    }
+
+    function render(){
+      chips.forEach(c=>c.setAttribute('aria-pressed', String(c.dataset.filter===state.filter)));
+      renderBalances();
+      renderLedger();
+
+      const pages = totalPages();
+      state.page = Math.min(state.page, pages);
+      pageIndicator.textContent = `${state.page} / ${pages}`;
+      prevBtn.disabled = state.page===1; nextBtn.disabled = state.page===pages;
+
+      const list = sliceForPage(state.page);
+      grid.innerHTML = '';
+      list.forEach(item => {
+        const card = document.createElement('article');
+        card.className = 'item';
+        card.innerHTML = `
+          <div class="thumb" aria-hidden="true"></div>
+          <h4>${item.name}</h4>
+          <div class="cost">${currencyBadge(item)}</div>
+          <button class="buy">Buy</button>
+        `;
+        card.querySelector('.buy').addEventListener('click', ()=> buy(item));
+        grid.appendChild(card);
+      });
+    }
+
+    function log(action, delta){
+      const d = new Date();
+      state.ledger.unshift({ when: d.toLocaleString(), action, delta });
+      state.ledger = state.ledger.slice(0, 200);
+    }
+
+    function buy(item){
+      if(item.currency==='gold'){
+        if(state.gold < item.cost){ alert('Not enough Gold. Complete quests to earn more!'); return; }
+        state.gold -= item.cost; log(`Purchased: ${item.name}`, `- ${item.cost} gold`);
+      } else {
+        if(state.diamonds < item.cost){ alert('Not enough Diamonds. Keep your streaks to earn more!'); return; }
+        state.diamonds -= item.cost; log(`Purchased: ${item.name}`, `- ${item.cost} diamonds`);
+      }
+      save(); render();
+    }
+
+    // -------------------------
+    // Events
+    // -------------------------
+    prevBtn.addEventListener('click', ()=>{ if(state.page>1){ state.page--; render(); }});
+    nextBtn.addEventListener('click', ()=>{ if(state.page<totalPages()){ state.page++; render(); }});
+    chips.forEach(c => c.addEventListener('click', ()=>{ state.filter = c.dataset.filter; state.page = 1; render(); }));
+
+    addCustomBtn.addEventListener('click', ()=> dlg.showModal());
+
+    form.addEventListener('close', (ev)=>ev.preventDefault());
+    form.addEventListener('submit', (ev)=> ev.preventDefault());
+    dlg.addEventListener('close', ()=>{/* noop */});
+
+    dlg.addEventListener('submit', (ev)=>ev.preventDefault());
+    dlg.addEventListener('click', (e)=>{ if(e.target.nodeName==='DIALOG') dlg.close(); });
+
+    form.addEventListener('submit', (e)=> e.preventDefault());
+
+    form.addEventListener('close', (e)=> e.preventDefault());
+
+    form.addEventListener('formdata', (e)=> e.preventDefault());
+
+    form.onsubmit = (e)=>{
+      e.preventDefault();
+      const name = document.getElementById('cname').value.trim();
+      const cost = Math.max(1, parseInt(document.getElementById('ccost').value, 10) || 1);
+      const currency = document.getElementById('ccurrency').value;
+      if(!name) return;
+      const newItem = { id: 'c'+Math.random().toString(36).slice(2,8), name, cost, currency };
+      state.customRewards.unshift(newItem);
+      log(`Added custom reward: ${name}`, `0`);
+      save(); dlg.close(); render();
+      form.reset();
+    }
+
+    ledgerBtn.addEventListener('click', ()=>{
+      const open = ledgerPanel.style.display === 'block';
+      ledgerPanel.style.display = open ? 'none' : 'block';
+      if(!open) renderLedger();
+    });
+
+    // -------------------------
+    // Demo balances & initial render -We will have to change all of these once we have the rewards/generation set up
+    // -------------------------
+    render();
+
+    // Expose lightweight API for later wiring
+    window.QuestifyShop = {
+      getState: ()=> JSON.parse(JSON.stringify(state)),
+      addCustomReward: (item)=>{ state.customRewards.unshift(item); save(); render(); },
+      setBalances: ({gold, diamonds})=>{ if(Number.isFinite(gold)) state.gold=gold; if(Number.isFinite(diamonds)) state.diamonds=diamonds; save(); render(); }
+    };
+  </script>
+</body>
+</html>

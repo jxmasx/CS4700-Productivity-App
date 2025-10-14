@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Questify – Tasks</title>
+ 
+  <link rel="stylesheet" href="styles/layout.css" />
+  <style>
+    
+    :root {
+      --bg: #f2c988;            /*Board parchment */
+      --bg-deep: #e9b76d;       /*Parchment shade */
+      --wood: #6e3f1c;          /*Outer wood */
+      --wood-dark: #4f2c10;     /*Wood edges */
+      --accent: #1b120a;        /*Text on dark wood */
+      --green: #3ca65c;         /*Leaf */
+      --shadow: 0 10px 24px rgba(0,0,0,.25);
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0; font-family: ui-rounded, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Apple Color Emoji", "Segoe UI Emoji";
+      background: linear-gradient(180deg, #f9efe2, #f5e4c8);
+      display: grid; place-items: center;
+      color: #2d1b0e;
+    }
+
+    /* -----------------
+       Questboard Layout
+    ------------------*/
+    .board-wrap {
+      width: min(1200px, 94vw);
+      aspect-ratio: 16/9;
+      position: relative;
+      padding: clamp(14px, 2.2vw, 28px);
+      filter: drop-shadow(var(--shadow));
+    }
+
+    /*Outer wooden frame */
+    .board-frame {
+      position: absolute; inset: 0;
+      border-radius: 28px;
+      background:
+        radial-gradient(120% 120% at 0% 0%, #855028 0 30%, transparent 31%) top left / 32% 32% no-repeat,
+        radial-gradient(120% 120% at 100% 0%, #855028 0 30%, transparent 31%) top right / 32% 32% no-repeat,
+        radial-gradient(120% 120% at 0% 100%, #855028 0 30%, transparent 31%) bottom left / 32% 32% no-repeat,
+        radial-gradient(120% 120% at 100% 100%, #855028 0 30%, transparent 31%) bottom right / 32% 32% no-repeat,
+        linear-gradient(90deg, var(--wood-dark), var(--wood));
+      box-shadow: inset 0 0 0 16px #7b4a25, inset 0 0 0 32px #90582b;
+    }
+
+    /*Inner parchment board */
+    .board {
+      position: absolute; inset: 22px;
+      background: radial-gradient(100% 70% at 50% 0%, #f7d89f 0 40%, transparent 41%),
+                  radial-gradient(100% 120% at 50% 100%, #f2d094 0 40%, transparent 41%),
+                  linear-gradient(180deg, var(--bg) 0%, var(--bg-deep) 100%);
+      border-radius: 18px;
+      clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%);
+    }
+
+    /*Wooden title banner */
+    .banner {
+      position: absolute; left: 50%; top: 0;
+      transform: translate(-50%, -40%);
+      display: flex; align-items: center; justify-content: center;
+      padding: 10px 24px; gap: 10px;
+    }
+    .leaf { width: clamp(40px, 6vw, 64px); height: clamp(28px, 4.5vw, 48px); background: var(--green); border-radius: 50% 50% 6px 50% / 60% 50% 6px 40%; filter: drop-shadow(0 4px 0 rgba(0,0,0,.15)); }
+    .title-wood {
+      background: linear-gradient(#5e3517, #3f220e);
+      color: #fffaf1; border-radius: 16px; padding: clamp(10px,1.5vw,16px) clamp(22px,3vw,36px);
+      font-weight: 700; letter-spacing: 1px; font-size: clamp(22px, 3.4vw, 44px);
+      box-shadow: inset 0 -6px rgba(0,0,0,.25), 0 10px 16px rgba(0,0,0,.25);
+    }
+
+    /*Grid for quest slots */
+    .grid {
+      position: absolute; inset: clamp(70px, 10vh, 120px) clamp(28px, 4vw, 60px) clamp(70px, 9vh, 100px);
+      display: grid; grid-template-columns: repeat(3, 1fr); grid-auto-rows: 1fr; gap: clamp(16px, 2.4vw, 28px);
+    }
+
+    /*Scroll parchment card */
+    .quest-card {
+      position: relative; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 10px;
+      padding: 18px 16px 16px; border-radius: 18px; isolation: isolate;
+      background:
+        radial-gradient(120% 60% at 50% 0%, rgba(0,0,0,.12), transparent 55%),
+        radial-gradient(100% 100% at 50% 100%, rgba(0,0,0,.10), transparent 70%),
+        linear-gradient(180deg, #f2e2ba 0%, #e6d0a1 100%);
+      box-shadow: 0 10px 16px rgba(0,0,0,.25);
+      overflow: hidden;
+    }
+    /*Mimic curled scroll edges */
+    .quest-card::before, .quest-card::after {
+      content: ""; position: absolute; left: 50%; transform: translateX(-50%);
+      width: 96%; height: 22%; border-radius: 10px;
+      background: radial-gradient(60% 160% at 50% 0%, rgba(0,0,0,.25), transparent 70%),
+                  linear-gradient(180deg, #c5a77a, #b08e63);
+      box-shadow: inset 0 6px rgba(255,255,255,.35), inset 0 -6px rgba(0,0,0,.15);
+      z-index: -1;
+    }
+    .quest-card::before { top: -6px; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px; }
+    .quest-card::after { bottom: -6px; border-top-left-radius: 12px; border-top-right-radius: 12px; }
+
+    .quest-title {
+      font-weight: 800; text-transform: uppercase; text-align: center; letter-spacing: .04em; font-size: clamp(14px, 1.3vw, 18px);
+    }
+    .quest-desc { text-align: center; font-size: clamp(12px, 1.1vw, 15px); opacity: .85; }
+
+    .progress {
+      width: 100%; height: 10px; background: #e8d9b6; border-radius: 999px; overflow: hidden; box-shadow: inset 0 2px 4px rgba(0,0,0,.15);
+    }
+    .progress > span { display: block; height: 100%; width: 0%; background: linear-gradient(90deg, #eab308, #f59e0b); transition: width .35s ease; }
+
+    .card-actions { display: flex; gap: 8px; }
+    .btn {
+      border: 0; border-radius: 999px; padding: 8px 14px; font-weight: 700; cursor: pointer;
+      background: #2f241a; color: #fff7e8; box-shadow: 0 4px 8px rgba(0,0,0,.25);
+      transition: transform .05s ease, filter .15s ease;
+    }
+    .btn.secondary { background: #8b5e34; }
+    .btn:active { transform: translateY(1px); }
+
+    /*Empty slot styling  */
+    .empty .quest-title, .empty .quest-desc, .empty .card-actions, .empty .progress { opacity: .25; filter: grayscale(0.4); }
+
+    /*Navigation arrows */
+    .nav {
+      position: absolute; bottom: clamp(18px, 2.2vw, 28px); width: 100%; display: flex; justify-content: space-between; align-items: center;
+      padding: 0 clamp(22px, 3vw, 40px);
+    }
+    .circle-btn {
+      width: clamp(54px, 6.6vw, 72px); aspect-ratio: 1; border-radius: 50%; border: none; cursor: pointer;
+      background: #111; color: #fff; display: grid; place-items: center; font-size: clamp(22px, 2.6vw, 32px);
+      box-shadow: 0 8px 16px rgba(0,0,0,.35);
+    }
+    .page-indicator { font-weight: 800; letter-spacing: .08em; opacity: .7; }
+
+    @media (max-width: 900px) {
+      .grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 560px) {
+      .grid { grid-template-columns: 1fr; }
+      .banner { transform: translate(-50%, -30%); }
+    }
+  </style>
+</head>
+<body>
+  <div class="board-wrap" role="application" aria-label="Questboard">
+    <div class="board-frame" aria-hidden="true"></div>
+    <div class="board" aria-hidden="true"></div>
+
+    <div class="banner" aria-hidden="true">
+      <div class="leaf" style="transform: rotate(-18deg)"></div>
+      <div class="title-wood">Tasks</div>
+      <div class="leaf" style="transform: rotate(18deg) scaleX(-1)"></div>
+    </div>
+
+    <section class="grid" id="grid" aria-live="polite"></section>
+
+    <div class="nav">
+      <button class="circle-btn" id="prevBtn" aria-label="Previous page">&#8592;</button>
+      <div class="page-indicator" id="pageIndicator">1 / 1</div>
+      <button class="circle-btn" id="nextBtn" aria-label="Next page">&#8594;</button>
+    </div>
+  </div>
+
+  <script>
+    // -------------------------
+    // This is just sample data, we should replace this with our integration later
+    // -------------------------
+    const SAMPLE_TASKS = [
+      { id: 1, title: 'Read Chapter 5', desc: 'Finish sections 5.1–5.3 and take notes.', progress: 20 },
+      { id: 2, title: 'Daily Habit: Water', desc: 'Drink 8 cups of water today.', progress: 60 },
+      { id: 3, title: 'CS Project – PR', desc: 'Open a PR for the sprint tasks.', progress: 40 },
+      { id: 4, title: 'Gym: Push Day', desc: 'Bench + accessories (45 mins).', progress: 10 },
+      { id: 5, title: 'Clean Desk', desc: '10-minute tidy and wipe down.', progress: 0 },
+      { id: 6, title: 'Email Professor', desc: 'Send availability for office hours.', progress: 85 },
+      { id: 7, title: 'Write 300 words', desc: 'Draft intro for research paper.', progress: 15 },
+      { id: 8, title: 'Meditation', desc: '5-minute focus practice.', progress: 0 },
+      { id: 9, title: 'Laundry', desc: 'Wash + fold (2 loads).', progress: 50 },
+    ];
+
+    //Pagination config (How the pages appear)
+    const PER_PAGE = 6;
+    let currentPage = 1;
+
+    const grid = document.getElementById('grid');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const pageIndicator = document.getElementById('pageIndicator');
+
+    function totalPages() {
+      return Math.max(1, Math.ceil(SAMPLE_TASKS.length / PER_PAGE));
+    }
+
+    function sliceForPage(page) {
+      const start = (page - 1) * PER_PAGE;
+      const end = start + PER_PAGE;
+      return SAMPLE_TASKS.slice(start, end);
+    }
+
+    function setProgress(el, value) {
+      const bar = el.querySelector('.progress > span');
+      bar.style.width = Math.min(100, Math.max(0, value)) + '%';
+    }
+
+    function render() {
+      //Update pagination
+      const pages = totalPages();
+      pageIndicator.textContent = `${currentPage} / ${pages}`;
+      prevBtn.disabled = currentPage === 1;
+      nextBtn.disabled = currentPage === pages;
+
+      //Render cards
+      const tasks = sliceForPage(currentPage);
+      grid.innerHTML = '';
+
+      for (let i = 0; i < PER_PAGE; i++) {
+        const task = tasks[i];
+        const card = document.createElement('article');
+        card.className = 'quest-card';
+        card.setAttribute('role', 'group');
+
+        if (!task) {
+          card.classList.add('empty');
+          card.innerHTML = `
+            <div class="quest-title">Empty slot</div>
+            <p class="quest-desc">Add a new quest to fill this scroll.</p>
+            <div class="progress" aria-label="Progress"><span style="width:0%"></span></div>
+            <div class="card-actions"><button class="btn secondary" disabled>Coming soon</button></div>
+          `;
+          grid.appendChild(card);
+          continue;
+        }
+
+        card.innerHTML = `
+          <div class="quest-title">${task.title}</div>
+          <p class="quest-desc">${task.desc}</p>
+          <div class="progress" aria-label="Progress"><span></span></div>
+          <div class="card-actions">
+            <button class="btn" data-action="advance">+10%</button>
+            <button class="btn secondary" data-action="complete">Complete</button>
+          </div>
+        `;
+
+        //Attach behavior
+        setProgress(card, task.progress);
+        card.addEventListener('click', (ev) => {
+          const act = ev.target?.dataset?.action;
+          if (!act) return;
+          ev.stopPropagation();
+          if (act === 'advance') {
+            task.progress = Math.min(100, task.progress + 10);
+            setProgress(card, task.progress);
+          }
+          if (act === 'complete') {
+            task.progress = 100;
+            setProgress(card, task.progress);
+            celebrate(card);
+          }
+        });
+
+        grid.appendChild(card);
+      }
+    }
+
+    //Simple confetti burst using DOM particles for when things are submitted
+    function celebrate(anchor) {
+      const n = 18;
+      for (let i = 0; i < n; i++) {
+        const p = document.createElement('span');
+        p.style.position = 'absolute';
+        p.style.width = p.style.height = (6 + Math.random() * 6) + 'px';
+        p.style.left = (50 + (Math.random() * 40 - 20)) + '%';
+        p.style.top = (50 + (Math.random() * 20 - 10)) + '%';
+        p.style.borderRadius = '2px';
+        p.style.background = `hsl(${Math.random()*360}, 80%, 60%)`;
+        p.style.transform = 'translate(-50%, -50%)';
+        p.style.pointerEvents = 'none';
+        p.style.opacity = '1';
+        p.style.transition = 'transform 700ms ease, opacity 700ms ease';
+        anchor.appendChild(p);
+        requestAnimationFrame(() => {
+          p.style.transform = `translate(${(Math.random()*240-120)}px, ${(Math.random()*-160-40)}px)`;
+          p.style.opacity = '0';
+        });
+        setTimeout(() => p.remove(), 750);
+      }
+    }
+
+    //Pagination handlers
+    prevBtn.addEventListener('click', () => { if (currentPage > 1) { currentPage--; render(); } });
+    nextBtn.addEventListener('click', () => { if (currentPage < totalPages()) { currentPage++; render(); } });
+
+    //Initial render
+    render();
+
+  </script>
+</body>
+</html>

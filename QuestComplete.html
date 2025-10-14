@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Questify – Quest Complete</title>
+  <link rel="stylesheet" href="styles/layout.css" />
+  <style>
+   
+    :root { --leaf:#3ca65c; --stone:#d8d8d8; --stone2:#bdbdbd; --ink:#2d1b0e; --shadow:0 12px 28px rgba(0,0,0,.32); }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0;background:linear-gradient(180deg,#f9efe2,#f5e4c8);font-family:ui-rounded,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;color:var(--ink);display:grid;place-items:center}
+
+    .wrap{width:min(1100px,94vw);position:relative;padding:20px}
+
+    /*Stone slab background*/
+    .slab{position:relative;border-radius:28px;background:radial-gradient(140% 100% at 50% 0%, #eee 0 35%, transparent 36%),
+                                 radial-gradient(140% 120% at 50% 100%, #eaeaea 0 40%, transparent 41%),
+                                 linear-gradient(180deg,var(--stone) 0%, var(--stone2) 100%);
+      padding:36px 30px 28px; box-shadow:var(--shadow), inset 0 -8px rgba(0,0,0,.15)}
+    .slab::after{content:''; position:absolute; inset:12px; border-radius:22px; box-shadow: inset 0 0 0 8px rgba(0,0,0,.08); pointer-events:none}
+
+    /*Leaf Garnish*/
+    .leaves{position:absolute; inset: -26px auto auto -26px; width: 40%; height: 0; padding-bottom: 20%; pointer-events:none}
+    .leaves.right{left:auto; right:-26px; transform:scaleX(-1)}
+    .leaf{position:absolute; background:var(--leaf); border-radius:50% 50% 10% 50%/60% 50% 10% 40%; filter:drop-shadow(0 3px 0 rgba(0,0,0,.2))}
+    .leaf.l1{width:120px; height:70px; top:-6px; left:30px}
+    .leaf.l2{width:80px; height:50px; top:34px; left:110px; transform:rotate(-12deg)}
+    .leaf.l3{width:90px; height:56px; top:0; left:180px; transform:rotate(18deg)}
+
+    .title{font-weight:900; text-align:center; font-size:clamp(28px,4vw,54px); text-shadow:0 2px 0 #fff}
+
+    .story{margin:10px auto 18px; max-width:78ch; text-align:center; font-size:clamp(16px,1.6vw,20px)}
+
+    .grid{display:grid; grid-template-columns:auto 1fr; gap:12px 18px; max-width:760px; margin:0 auto}
+    .label{font-weight:800; font-size:clamp(16px,1.6vw,20px)}
+    .value{font-size:clamp(16px,1.5vw,18px)}
+
+    .rewards{display:flex; flex-wrap:wrap; gap:10px}
+    .reward{background:#8b5e34; color:#fff7e8; border-radius:12px; padding:8px 12px; font-weight:800; display:flex; gap:8px; align-items:center; box-shadow:0 6px 12px rgba(0,0,0,.2)}
+    .coin{width:18px; height:18px; border-radius:50%; background:radial-gradient(circle,#ffd34d,#eab308)}
+    .gem{width:0;height:0;border-left:9px solid transparent;border-right:9px solid transparent;border-bottom:18px solid #60a5fa;filter:drop-shadow(0 2px 0 rgba(0,0,0,.18))}
+
+    .next{position:absolute; right:18px; bottom:18px; border:0; border-radius:999px; width:60px; aspect-ratio:1; background:#111; color:#fff; font-size:24px; cursor:pointer; box-shadow:0 10px 18px rgba(0,0,0,.35)}
+
+    canvas#fx{position:fixed; inset:0; pointer-events:none}
+
+    @media (max-width:680px){ .grid{grid-template-columns:1fr} }
+  </style>
+</head>
+<body>
+  <canvas id="fx"></canvas>
+  <main class="wrap" role="dialog" aria-labelledby="title">
+    <section class="slab" id="card">
+      <div class="leaves">
+        <div class="leaf l1"></div><div class="leaf l2"></div><div class="leaf l3"></div>
+      </div>
+      <div class="leaves right">
+        <div class="leaf l1"></div><div class="leaf l2"></div><div class="leaf l3"></div>
+      </div>
+
+      <h1 class="title" id="title">Quest Complete!</h1>
+      <p class="story" id="story">Insert Task/Habit related Task & Storyline here!</p>
+
+      <div class="grid">
+        <div class="label">EXP Earned:</div>
+        <div class="value" id="exp">+0 EXP</div>
+
+        <div class="label">Stat(s) Increased:</div>
+        <div class="value" id="stats">—</div>
+
+        <div class="label">Reward:</div>
+        <div class="value"><div class="rewards" id="rewards"></div></div>
+      </div>
+
+      <button class="next" id="nextBtn" aria-label="Next">➜</button>
+    </section>
+  </main>
+
+  <script>
+    //Simple confetti for completion
+    const fx = document.getElementById('fx');
+    const ctx = fx.getContext('2d');
+    function resize(){ fx.width = innerWidth; fx.height = innerHeight; }
+    addEventListener('resize', resize); resize();
+    function confettiBurst(n=120){
+      const parts = Array.from({length:n},()=>({x:fx.width/2+(Math.random()*300-150),y:fx.height/2-80,r:2+Math.random()*3,vx:(Math.random()*6-3),vy:-6-Math.random()*5,c:`hsl(${Math.random()*360},85%,60%)`,rot:Math.random()*6}));
+      let life = 0; function step(){ life++; ctx.clearRect(0,0,fx.width,fx.height); parts.forEach(p=>{ p.vy+=0.15; p.x+=p.vx; p.y+=p.vy; p.rot+=0.12; ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.rot); ctx.fillStyle=p.c; ctx.fillRect(-p.r,-p.r,p.r*2,p.r*2); ctx.restore(); }); if(life<110) requestAnimationFrame(step); }
+      requestAnimationFrame(step);
+    }
+
+    const storyEl = document.getElementById('story');
+    const expEl = document.getElementById('exp');
+    const statsEl = document.getElementById('stats');
+    const rewardsEl = document.getElementById('rewards');
+    const nextBtn = document.getElementById('nextBtn');
+
+    function rewardBadge(r){
+      const icon = r.currency==='gold' ? '<span class="coin"></span>' : r.currency==='diamonds' ? '<span class="gem"></span>' : '';
+      const label = r.label || r.name || `${r.amount||''} ${r.currency||'Reward'}`.trim();
+      return `<span class="reward">${icon}<span>${label}</span></span>`
+    }
+
+    const state = { exp: 0, stats: {}, rewards: [], storyline: '' };
+
+    function render(){
+      storyEl.textContent = state.storyline || 'Insert Task/Habit related Task & Storyline here!';
+      expEl.textContent = `+${state.exp} EXP`;
+      const entries = Object.entries(state.stats||{});
+      statsEl.textContent = entries.length ? entries.map(([k,v])=>`+${v} ${k}`).join(', ') : '—';
+      rewardsEl.innerHTML = (state.rewards||[]).map(rewardBadge).join('');
+    }
+
+    nextBtn.addEventListener('click', () => {
+      document.dispatchEvent(new CustomEvent('quest:complete:continue', { detail: { ...state } }));
+    });
+
+    //Public API for wiring
+    window.QuestifyQuestComplete = {
+      open(payload){
+        state.exp = Number(payload?.exp||0);
+        state.stats = payload?.stats || {};
+        state.rewards = payload?.rewards || [];
+        state.storyline = payload?.storyline || '';
+        render(); confettiBurst();
+      },
+      getState(){ return JSON.parse(JSON.stringify(state)); }
+    };
+
+    //Demo preview - will have to be changed for later
+    QuestifyQuestComplete.open({
+      exp: 80,
+      stats: { Focus: 1 },
+      rewards: [ { currency:'gold', amount:50, label:'50 Gold' }, { currency:'diamonds', amount:1, label:'1 Diamond' }, { name:'Energy Elixir' } ],
+      storyline: 'You return to the guild with your notes polished and your desk spotless. The Guildmaster nods approvingly.'
+    });
+  </script>
+</body>
+</html>

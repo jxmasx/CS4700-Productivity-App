@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Questify – Level Up</title>
+  <link rel="stylesheet" href="styles/layout.css" />
+  <style>
+        :root { --wood:#6e3f1c; --wood-dark:#4f2c10; --parch:#e9c988; --parch2:#e2b974; --green:#3ca65c; --shadow:0 10px 24px rgba(0,0,0,.25); }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0;display:grid;place-items:center;background:linear-gradient(180deg,#f9efe2,#f5e4c8);font-family:ui-rounded,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;color:#2d1b0e}
+
+    .wrap{width:min(1000px,94vw);padding:20px;position:relative}
+
+    /*Wood frame card*/
+    .frame{position:relative;border-radius:28px;background:linear-gradient(180deg,var(--wood) 0%,var(--wood-dark) 100%);box-shadow:inset 0 -8px rgba(0,0,0,.25), var(--shadow)}
+    .panel{margin:22px;border-radius:24px;background:linear-gradient(180deg,var(--parch) 0%, var(--parch2) 100%);padding:38px;box-shadow:inset 0 0 0 8px rgba(0,0,0,.12)}
+
+    /*Banner*/
+    .banner{position:absolute;left:50%;top:0;transform:translate(-50%,-40%);display:flex;align-items:center;gap:12px}
+    .leaf{width:60px;height:40px;background:var(--green);border-radius:50% 50% 6px 50%/60% 50% 6px 40%;filter:drop-shadow(0 3px 0 rgba(0,0,0,.2))}
+    .title-wood{background:linear-gradient(#5e3517,#3f220e);color:#fffaf1;border-radius:16px;padding:12px 28px;font-weight:800;letter-spacing:1px;font-size:clamp(24px,3.6vw,46px);box-shadow:inset 0 -6px rgba(0,0,0,.25),0 10px 16px rgba(0,0,0,.25)}
+
+    /*Content*/
+    .row{display:grid;grid-template-columns:auto 1fr;gap:14px 18px;align-items:start}
+    .label{font-size:clamp(18px,2.1vw,26px);font-weight:800}
+    .value{font-size:clamp(18px,2vw,24px)}
+
+    .rewards{display:flex;flex-wrap:wrap;gap:12px;margin-top:8px}
+    .reward{background:#8b5e34;color:#fff7e8;border-radius:12px;padding:10px 14px;font-weight:800;box-shadow:0 6px 12px rgba(0,0,0,.2);display:flex;align-items:center;gap:8px}
+    .coin{width:18px;height:18px;border-radius:50%;background:radial-gradient(circle,#ffd34d,#eab308)}
+    .gem{width:0;height:0;border-left:9px solid transparent;border-right:9px solid transparent;border-bottom:18px solid #60a5fa;filter:drop-shadow(0 2px 0 rgba(0,0,0,.18))}
+    .badge{border:2px solid rgba(255,255,255,.4);border-radius:999px;padding:3px 8px;font-size:.9em}
+
+    .acquire-bar{margin:26px auto 6px;display:flex;justify-content:center}
+    .acquire{border:0;border-radius:16px;background:#2f241a;color:#fff7e8;font-weight:900;padding:14px 30px;font-size:clamp(18px,2.2vw,26px);cursor:pointer;box-shadow:0 10px 18px rgba(0,0,0,.35)}
+
+    /*Backdrop Confetti Canvas*/
+    canvas#fx{position:fixed;inset:0;pointer-events:none}
+
+    @media (max-width:680px){
+      .panel{padding:28px}
+      .row{grid-template-columns:1fr}
+    }
+  </style>
+</head>
+<body>
+  <canvas id="fx"></canvas>
+  <main class="wrap" role="dialog" aria-labelledby="title">
+    <div class="frame">
+      <div class="banner" aria-hidden="true">
+        <div class="leaf" style="transform:rotate(-18deg)"></div>
+        <div id="title" class="title-wood">Level Up</div>
+        <div class="leaf" style="transform:rotate(18deg) scaleX(-1)"></div>
+      </div>
+      <section class="panel" id="content">
+        <div class="row">
+          <div class="label">Exp Increase:</div>
+          <div class="value" id="expDelta">+0 EXP</div>
+
+          <div class="label">Stat Increase:</div>
+          <div class="value" id="statsDelta">+0 to all</div>
+
+          <div class="label">Reward(s):</div>
+          <div class="value">
+            <div class="rewards" id="rewards"></div>
+          </div>
+        </div>
+        <div class="acquire-bar">
+          <button id="acquire" class="acquire">Acquire!</button>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    // ---------- Tiny Confetti Engine ----------
+    const fx = document.getElementById('fx');
+    const ctx = fx.getContext('2d');
+    function resize(){ fx.width = innerWidth; fx.height = innerHeight; }
+    addEventListener('resize', resize); resize();
+
+    function confettiBurst(n=140){
+      const parts = Array.from({length:n}, () => ({
+        x: fx.width/2 + (Math.random()*200-100),
+        y: fx.height/2, r: 2+Math.random()*3,
+        vx: (Math.random()*6-3), vy: -6-Math.random()*5,
+        c: `hsl(${Math.random()*360},85%,60%)`, life: 0, rot: Math.random()*Math.PI
+      }));
+      const start = performance.now();
+      function step(t){
+        const dt = Math.min(30, t-start)/16; // normalize
+        ctx.clearRect(0,0,fx.width,fx.height);
+        parts.forEach(p=>{
+          p.life += 1; p.vy += 0.15; p.x += p.vx; p.y += p.vy; p.rot += 0.1; 
+          ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.rot); ctx.fillStyle=p.c; ctx.fillRect(-p.r,-p.r,p.r*2,p.r*2); ctx.restore();
+        });
+        if(parts[0].life < 120) requestAnimationFrame(step); else ctx.clearRect(0,0,fx.width,fx.height);
+      }
+      requestAnimationFrame(step);
+    }
+
+    // ---------- Level Up rendering & API ----------
+    const expDeltaEl = document.getElementById('expDelta');
+    const statsDeltaEl = document.getElementById('statsDelta');
+    const rewardsEl = document.getElementById('rewards');
+    const acquireBtn = document.getElementById('acquire');
+
+    const formatStats = (stats={}) => Object.entries(stats).map(([k,v])=>`+${v} ${k}`).join(', ');
+    const rewardBadge = (r)=>{
+      const icon = r.currency==='gold' ? '<span class="coin"></span>' : r.currency==='diamonds' ? '<span class="gem"></span>' : '<span class="badge">'+(r.type||'Reward')+'</span>';
+      const text = r.amount ? `${r.amount} ${r.currency||''}`.trim() : (r.label||r.name||'Reward');
+      return `<span class="reward">${icon}<span>${r.label || r.name || text}</span></span>`
+    }
+
+    const state = {
+      expDelta: 0,
+      statsDelta: {},
+      rewards: [],
+      onAcquire: null
+    };
+
+    function render(){
+      expDeltaEl.textContent = `+${state.expDelta} EXP`;
+      statsDeltaEl.textContent = Object.keys(state.statsDelta).length ? formatStats(state.statsDelta) : '+0 to all';
+      rewardsEl.innerHTML = state.rewards.map(rewardBadge).join('');
+    }
+
+    acquireBtn.addEventListener('click', ()=>{
+      confettiBurst();
+      const detail = { expDelta: state.expDelta, statsDelta: state.statsDelta, rewards: state.rewards };
+      document.dispatchEvent(new CustomEvent('levelup:acquire', { detail }));
+      if (typeof state.onAcquire === 'function') state.onAcquire(detail);
+    });
+
+    //Public API for wiring 
+    window.QuestifyLevelUp = {
+      open(payload){
+        state.expDelta = Number(payload?.expDelta||0);
+        state.statsDelta = payload?.statsDelta || {};
+        state.rewards = payload?.rewards || [];
+        state.onAcquire = payload?.onAcquire || null;
+        render();
+               document.querySelector('.wrap').scrollIntoView({behavior:'smooth', block:'center'});
+      },
+      close(){  },
+      getState(){ return JSON.parse(JSON.stringify(state)); }
+    };
+
+    //Demo - will have to replace later with customizable things
+    window.QuestifyLevelUp.open({
+      expDelta: 120,
+      statsDelta: { Strength: 1, Focus: 2 },
+      rewards: [
+        { currency: 'gold', amount: 100, label: '100 Gold' },
+        { currency: 'diamonds', amount: 1, label: '1 Diamond' },
+        { type: 'item', label: 'Mystic Elixir' }
+      ]
+    });
+  </script>
+</body>
+</html>

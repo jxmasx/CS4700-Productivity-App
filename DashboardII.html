@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Questify – Main Dashboard (Data‑Driven)</title>
+  <link rel="stylesheet" href="styles/layout.css" />
+  <style>
+    :root { --bg1:#9be7ff; --bg2:#58c2ff; --wood:#6e3f1c; --wood2:#4f2c10; --leaf:#3ca65c; --parch:#f2c988; --parch2:#e9b76d; --ink:#2d1b0e; --cream:#fffaf1; --shadow:0 12px 28px rgba(0,0,0,.30); }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0;background:linear-gradient(180deg,var(--bg1),var(--bg2));font-family:ui-rounded,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;color:var(--ink)}
+
+    .shell{max-width:1280px;margin: clamp(12px,2vw,24px) auto; padding: 0 clamp(10px,2vw,20px); display:grid; grid-template-columns: 1.2fr 1fr; grid-template-rows: auto auto; gap: 16px}
+    .woodframe{position:relative; background:linear-gradient(180deg,var(--wood),var(--wood2)); border-radius:22px; box-shadow:inset 0 -8px rgba(0,0,0,.25), var(--shadow); padding:18px}
+    .board{position:relative;background:linear-gradient(180deg,var(--parch),var(--parch2)); border-radius:18px; box-shadow:var(--shadow), inset 0 0 0 8px rgba(0,0,0,.12); padding:12px}
+    .banner{position:absolute; left:50%; top:0; transform:translate(-50%,-50%); display:flex; align-items:center; gap:10px}
+    .leaf{width:56px; height:36px; background:var(--leaf); border-radius:50% 50% 6px 50%/60% 50% 6% 40%; filter:drop-shadow(0 2px 0 rgba(0,0,0,.15))}
+    .title{background:linear-gradient(#5e3517,#3f220e); color:var(--cream); border-radius:14px; padding:10px 24px; font-weight:800; letter-spacing:.5px; font-size:clamp(18px,2.2vw,26px); box-shadow:inset 0 -6px rgba(0,0,0,.25),0 8px 16px rgba(0,0,0,.25)}
+
+    /*Character Sheet */
+    .character{display:grid; grid-template-columns: 124px 1fr 124px; gap:10px; align-items:start}
+    .slots{display:grid; gap:8px}
+    .slot{background:#8b5e34; color:#fff7e8; border-radius:10px; text-align:center; padding:8px; font-weight:800; cursor:pointer; box-shadow:0 6px 12px rgba(0,0,0,.2)}
+    .slot[data-equipped="true"]{outline:3px solid #22c55e}
+    .avatar{background:linear-gradient(180deg,#f7e4bd,#e3c78f); border-radius:16px; height:260px; display:grid; place-items:center; font-weight:900; box-shadow: inset 0 0 0 8px rgba(0,0,0,.12)}
+    .expbar{grid-column:1 / -1; margin-top:8px; background:#e8d9b6; height:10px; border-radius:999px; overflow:hidden; box-shadow: inset 0 2px 4px rgba(0,0,0,.2)}
+    .expbar>span{display:block; height:100%; width:0; background:linear-gradient(90deg,#22c55e,#16a34a)}
+
+    /*Character Stats*/
+    .stats{display:grid; grid-template-columns: 1.2fr 1fr; gap:10px}
+    .stats .list{display:grid; gap:8px; align-content:start}
+    .row{display:flex; justify-content:space-between; background:#fffaf1; border-radius:10px; padding:8px 10px; box-shadow:0 6px 12px rgba(0,0,0,.12)}
+    .chartwrap{position:relative; height:240px; background:#fffaf1; border-radius:16px; box-shadow:0 6px 12px rgba(0,0,0,.12); display:grid; place-items:center}
+    canvas#radar{width:100%; height:100%}
+
+    /*Tasks*/
+    .tasks .grid{display:grid; grid-template-columns: repeat(3, 1fr); grid-auto-rows: 1fr; gap:12px; padding:8px}
+    .quest-card{position:relative; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:10px; padding:14px; border-radius:14px; background:linear-gradient(180deg,#f2e2ba,#e6d0a1); box-shadow:0 8px 16px rgba(0,0,0,.2)}
+    .quest-card .title{background:none; color:inherit; box-shadow:none; padding:0; font-size:16px}
+    .quest-card .progress{width:100%; height:8px; background:#e8d9b6; border-radius:999px; overflow:hidden}
+    .quest-card .progress>span{display:block; height:100%; width:0; background:linear-gradient(90deg,#eab308,#f59e0b)}
+
+    /*Inventory - Customize Later*/
+    .inventory .grid{display:grid; grid-template-columns:repeat(3,1fr); gap:12px; padding:8px}
+    .ibox{background:linear-gradient(180deg,#f2cf9e,#e0b66f); border-radius:14px; height:100px; box-shadow:inset 0 0 0 6px rgba(0,0,0,.12), 0 8px 16px rgba(0,0,0,.2); display:grid; place-items:center; font-weight:800; cursor:pointer}
+    .row-bottom{display:flex; justify-content:space-between; align-items:center; margin-top:6px}
+    .circle{width:54px; aspect-ratio:1; border-radius:50%; border:0; background:#111; color:#fff; font-size:24px; display:grid; place-items:center; box-shadow:0 8px 16px rgba(0,0,0,.35)}
+    .btn{border:0; border-radius:10px; padding:10px 16px; background:#2f241a; color:#fff7e8; font-weight:800; box-shadow:0 8px 16px rgba(0,0,0,.25); cursor:pointer}
+
+    @media (max-width:1100px){ .shell{grid-template-columns:1fr} }
+
+    dialog{border:0;border-radius:16px;padding:18px;box-shadow:0 20px 60px rgba(0,0,0,.35)}
+    dialog::backdrop{background:rgba(0,0,0,.35)}
+    .field{display:grid;gap:6px;margin:10px 0}
+    .field input,.field select{padding:10px;border-radius:10px;border:2px solid #ddd}
+  </style>
+</head>
+<body>
+  <div class="shell">
+
+    <!-- Character Info -->
+    <section class="woodframe" aria-label="Character Info">
+      <div class="banner" aria-hidden="true">
+        <div class="leaf" style="transform:rotate(-18deg)"></div>
+        <div class="title">Character Info</div>
+        <div class="leaf" style="transform:rotate(18deg) scaleX(-1)"></div>
+      </div>
+      <div class="board character">
+        <div class="slots" id="leftSlots"></div>
+        <div class="avatar" id="avatar">Avatar</div>
+        <div class="slots" id="rightSlots"></div>
+        <div class="expbar"><span id="xpFill"></span></div>
+      </div>
+    </section>
+
+    <!-- Stats -->
+    <section class="woodframe" aria-label="Character Stats">
+      <div class="banner" aria-hidden="true">
+        <div class="leaf" style="transform:rotate(-18deg)"></div>
+        <div class="title">Character Stats</div>
+        <div class="leaf" style="transform:rotate(18deg) scaleX(-1)"></div>
+      </div>
+      <div class="board stats">
+        <div class="list" id="statList"></div>
+        <div class="chartwrap"><canvas id="radar"></canvas></div>
+      </div>
+    </section>
+
+    <!-- Tasks Board -->
+    <section class="woodframe tasks" aria-label="Tasks">
+      <div class="banner" aria-hidden="true">
+        <div class="leaf" style="transform:rotate(-18deg)"></div>
+        <div class="title">Tasks</div>
+        <div class="leaf" style="transform:rotate(18deg) scaleX(-1)"></div>
+      </div>
+      <div class="board">
+        <div class="grid" id="taskGrid"></div>
+      </div>
+    </section>
+
+    <!-- Inventory -->
+    <section class="woodframe inventory" aria-label="Inventory">
+      <div class="banner" aria-hidden="true">
+        <div class="leaf" style="transform:rotate(-18deg)"></div>
+        <div class="title">Inventory</div>
+        <div class="leaf" style="transform:rotate(18deg) scaleX(-1)"></div>
+      </div>
+      <div class="board">
+        <div class="grid" id="invGrid"></div>
+        <div class="row-bottom">
+          <button class="circle" id="invPrev">←</button>
+          <button class="btn" id="shopBtn">Shop</button>
+          <button class="circle" id="invNext">→</button>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- Modals -->
+  <dialog id="itemDialog">
+    <form method="dialog" style="min-width:min(420px,90vw)">
+      <h3 id="itemTitle">Item</h3>
+      <p id="itemDesc" style="opacity:.9"></p>
+      <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:8px">
+        <button value="cancel">Close</button>
+        <button id="equipBtn" value="default">Equip</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="addTaskDialog">
+    <form id="addTaskForm">
+      <h3>New Task / Habit</h3>
+      <div class="field"><label>Title<input name="title" required placeholder="e.g., Study 25 minutes"/></label></div>
+      <div class="field"><label>Type<select name="type"><option value="task">Task</option><option value="habit">Habit</option></select></label></div>
+      <div class="field"><label>EXP Reward<input type="number" name="exp" value="25" min="1"/></label></div>
+      <div class="field"><label>Gold Reward<input type="number" name="gold" value="10" min="0"/></label></div>
+      <div class="field"><label>Diamond Reward<input type="number" name="diamonds" value="0" min="0"/></label></div>
+      <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:8px">
+        <button type="button" onclick="document.getElementById('addTaskDialog').close()">Cancel</button>
+        <button type="submit">Create</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script>
+    // ------------------------------
+    // Lightweight State Store (localStorage-backed) !!We need to change this later!!
+    // ------------------------------
+    const STORE = 'qf_dashboard_state_v1';
+    const DEFAULT = {
+      profile: { name:'Ash', class:'Scholar', rank:'Apprentice', level:1, xp:0, xpMax:100, gold:250, diamonds:5 },
+      baseStats: { HP:60, MP:40, STR:4, DEX:6, STAM:5, INT:7, WIS:5, CHARM:3 },
+      gearSlots: ['head','chest','arm','pants','foot','weapon1','weapon2','extra'],
+      gear: {}, // slot->itemId
+      items: [
+        { id:'i1', name:'Bronze Sword', slot:'weapon1', bonus:{ STR:1 }, desc:'Reliable beginner blade.'},
+        { id:'i2', name:'Oak Staff', slot:'weapon2', bonus:{ INT:1 }, desc:'Channeling focus for spells.'},
+        { id:'i3', name:'Leather Cap', slot:'head', bonus:{ STAM:1 }, desc:'Light protection.'},
+        { id:'i4', name:'Scholar Robe', slot:'chest', bonus:{ INT:1, WIS:1 }, desc:'Robes of learning.'},
+        { id:'i5', name:'Boots', slot:'foot', bonus:{ DEX:1 }, desc:'Move with purpose.'},
+        { id:'i6', name:'Charm Locket', slot:'extra', bonus:{ CHARM:1 }, desc:'A glimmer of charisma.'}
+      ],
+      tasks: [
+        { id:'t1', title:'Write 300 words', type:'task', progress:0, exp:40, gold:20, diamonds:0 },
+        { id:'t2', title:'Daily Water', type:'habit', progress:0, exp:15, gold:5, diamonds:0 },
+        { id:'t3', title:'PR for Sprint', type:'task', progress:0, exp:30, gold:15, diamonds:0 }
+      ]
+    };
+
+    let state = JSON.parse(localStorage.getItem(STORE) || 'null') || structuredClone(DEFAULT);
+    const save = () => localStorage.setItem(STORE, JSON.stringify(state));
+
+    // ------------------------------
+    // Derived Stats & Helpers
+    // ------------------------------
+    const slotLabels = {
+      head:'Head Gear', chest:'Chest Gear', arm:'Arm Gear', pants:'Pants Gear', foot:'Foot Gear', weapon1:'Weapon #1', weapon2:'Weapon #2 / Magic', extra:'Xtra Item'
+    };
+    function gearBonuses(){
+      const bonus = { STR:0, DEX:0, STAM:0, INT:0, WIS:0, CHARM:0 };
+      Object.entries(state.gear).forEach(([slot,id])=>{
+        const item = state.items.find(i=>i.id===id); if(!item||!item.bonus) return; for(const k in item.bonus){ bonus[k] += item.bonus[k]; }
+      });
+      return bonus;
+    }
+    function totalStats(){
+      const res = { ...state.baseStats };
+      const b = gearBonuses(); for(const k in b){ res[k] = (res[k]||0)+b[k]; }
+      return res;
+    }
+    function addCurrency({gold=0, diamonds=0}){ state.profile.gold += gold; state.profile.diamonds += diamonds; }
+    function addExp(n){
+      state.profile.xp += n; while(state.profile.xp >= state.profile.xpMax){ state.profile.xp -= state.profile.xpMax; state.profile.level++; state.profile.xpMax = Math.round(state.profile.xpMax * 1.15); // simple curve
+        // on level up grant 2 random stats
+        const keys=['STR','DEX','STAM','INT','WIS','CHARM'];
+        for(let i=0;i<2;i++){ const k=keys[Math.floor(Math.random()*keys.length)]; state.baseStats[k]++; }
+      }
+    }
+
+    // ------------------------------
+    // UI Renderers
+    // ------------------------------
+    const leftSlots = document.getElementById('leftSlots');
+    const rightSlots = document.getElementById('rightSlots');
+    const xpFill = document.getElementById('xpFill');
+
+    function renderSlots(){
+      const left=['head','chest','arm','pants'];
+      const right=['weapon1','weapon2','extra','foot'];
+      function mk(side, root){
+        root.innerHTML = '';
+        side.forEach(slot=>{
+          const b = document.createElement('button'); b.className='slot'; b.dataset.slot=slot;
+          const equipped = state.gear[slot];
+          b.textContent = equipped ? `${slotLabels[slot]} ✓` : slotLabels[slot];
+          if(equipped) b.setAttribute('data-equipped','true'); else b.removeAttribute('data-equipped');
+          b.onclick = () => openEquip(slot);
+          root.appendChild(b);
+        });
+      }
+      mk(left,leftSlots); mk(right,rightSlots);
+      xpFill.style.width = (state.profile.xp/state.profile.xpMax*100)+'%';
+    }
+
+    //Stats list and radar chart
+    const statList = document.getElementById('statList');
+    function renderStats(){
+      const t = totalStats();
+      const rows = [
+        ['Character Name', state.profile.name],
+        ['Class', state.profile.class],
+        ['Guild Rank', state.profile.rank],
+        ['Level', state.profile.level],
+        ['Gold', state.profile.gold],
+        ['Diamonds', state.profile.diamonds],
+        ['HP', t.HP], ['MP', t.MP], ['STR', t.STR], ['DEX', t.DEX], ['STAM', t.STAM], ['INT', t.INT], ['WIS', t.WIS], ['CHARM', t.CHARM]
+      ];
+      statList.innerHTML = rows.map(([k,v])=>`<div class="row"><span>${k}</span><strong>${v}</strong></div>`).join('');
+      drawRadar();
+    }
+
+    //Radar
+    const radar = document.getElementById('radar'); const rc = radar.getContext('2d');
+    function sizeRadar(){ radar.width = radar.clientWidth; radar.height = radar.clientHeight; }
+    addEventListener('resize', sizeRadar); sizeRadar();
+    function drawRadar(){
+      sizeRadar();
+      const s = totalStats(); const labels=['STR','DEX','STAM','INT','WIS','CHARM']; const values=labels.map(k=>s[k]);
+      const max= Math.max(10, ...values)+1; const cx=radar.width/2, cy=radar.height/2, R=Math.min(cx,cy)-18; rc.clearRect(0,0,radar.width,radar.height); rc.save(); rc.translate(cx,cy);
+      const N=labels.length; rc.font='12px system-ui'; rc.textAlign='center';
+      for(let ring=1; ring<=5; ring++){ rc.beginPath(); const r=R*ring/5; for(let i=0;i<N;i++){ const a=(Math.PI*2*i)/N - Math.PI/2; const x=r*Math.cos(a), y=r*Math.sin(a); i?rc.lineTo(x,y):rc.moveTo(x,y);} rc.closePath(); rc.strokeStyle='rgba(0,0,0,.15)'; rc.stroke(); }
+      for(let i=0;i<N;i++){ const a=(Math.PI*2*i)/N - Math.PI/2; const x=R*Math.cos(a), y=R*Math.sin(a); rc.beginPath(); rc.moveTo(0,0); rc.lineTo(x,y); rc.strokeStyle='rgba(0,0,0,.12)'; rc.stroke(); rc.fillText(labels[i], x*1.08, y*1.08+4); }
+      rc.beginPath(); for(let i=0;i<N;i++){ const a=(Math.PI*2*i)/N - Math.PI/2; const r=R*(values[i]/max); const x=r*Math.cos(a), y=r*Math.sin(a); i?rc.lineTo(x,y):rc.moveTo(x,y);} rc.closePath(); rc.fillStyle='rgba(52,211,153,.35)'; rc.fill(); rc.strokeStyle='rgba(16,185,129,.9)'; rc.lineWidth=2; rc.stroke(); rc.restore();
+    }
+
+    //Tasks (3x2 grid, add dialog)
+    const taskGrid = document.getElementById('taskGrid');
+    function renderTasks(){
+      taskGrid.innerHTML = '';
+      const perPage=6; const tasks = state.tasks.slice(0, perPage);
+      for(let i=0;i<perPage;i++){
+        const t = tasks[i];
+        const el = document.createElement('article'); el.className='quest-card';
+        if(t){
+          el.innerHTML = `<div class="title" style="color:#fffaf1">${t.title}</div>
+            <div class="progress"><span style="width:${t.progress||0}%"></span></div>
+            <div style="display:flex;gap:8px"><button class="btn" data-add="10">+10%</button><button class="btn" data-complete>Complete</button></div>`;
+          el.addEventListener('click', (e)=>{
+            if(e.target.dataset.add){ t.progress = Math.min(100, (t.progress||0) + Number(e.target.dataset.add)); el.querySelector('.progress>span').style.width = t.progress+'%'; save(); }
+            if(e.target.hasAttribute('data-complete')){ t.progress = 100; el.querySelector('.progress>span').style.width = '100%';
+              //Rewards
+              addExp(t.exp||10); addCurrency({gold:t.gold||0, diamonds:t.diamonds||0});
+              //20% chance to drop a random item
+              if(Math.random()<0.2){ const drop = randomItemDrop(); state.items.push(drop); alert(`You found: ${drop.name}`); }
+              save(); renderAll();
+            }
+          });
+        } else {
+          el.style.opacity=.6; el.innerHTML = `<div class="title" style="color:#fffaf1">Empty slot</div><div class="progress"><span style="width:0%"></span></div><button class="btn" onclick="document.getElementById('addTaskDialog').showModal()">+ New</button>`;
+        }
+        taskGrid.appendChild(el);
+      }
+    }
+
+    function randomItemDrop(){
+      const CATALOG=[
+        { id:'d1', name:'Mystic Shield', slot:'arm', bonus:{ STAM:1 } },
+        { id:'d2', name:'Forest Cloak', slot:'chest', bonus:{ WIS:1 } },
+        { id:'d3', name:'Fox Companion', slot:'extra', bonus:{ CHARM:1 } }
+      ];
+      const pick = structuredClone(CATALOG[Math.floor(Math.random()*CATALOG.length)]); pick.id = pick.id + '_' + Math.random().toString(36).slice(2,7); return pick;
+    }
+
+    //Inventory & Equip
+    const invGrid = document.getElementById('invGrid');
+    const invPrev = document.getElementById('invPrev');
+    const invNext = document.getElementById('invNext');
+    let invPage=1, invPerPage=6;
+    function renderInventory(){
+      const start=(invPage-1)*invPerPage; const items=state.items.slice(start, start+invPerPage);
+      invGrid.innerHTML='';
+      for(let i=0;i<invPerPage;i++){
+        const it = items[i]; const cell=document.createElement('div'); cell.className='ibox'; cell.textContent = it? it.name : '';
+        if(it){ cell.onclick = () => openItem(it); }
+        invGrid.appendChild(cell);
+      }
+      invPrev.disabled = invPage===1; invNext.disabled = (start+invPerPage)>=state.items.length;
+    }
+    invPrev.onclick = ()=>{ if(invPage>1){ invPage--; renderInventory(); } };
+    invNext.onclick = ()=>{ if((invPage*invPerPage) < state.items.length){ invPage++; renderInventory(); } };
+
+    function openItem(item){
+      const dlg=document.getElementById('itemDialog');
+      document.getElementById('itemTitle').textContent=item.name;
+      document.getElementById('itemDesc').textContent=item.desc || (item.slot?`Equip: ${slotLabels[item.slot]}`:'Consumable');
+      const equipBtn=document.getElementById('equipBtn');
+      equipBtn.textContent = item.slot? 'Equip' : 'Use';
+      equipBtn.onclick = ()=>{
+        if(item.slot){ state.gear[item.slot]=item.id; }
+        else { /*consumable example: +10 HP */ state.baseStats.HP += 5; state.items = state.items.filter(i=>i.id!==item.id); }
+        /* We need to change this as well */
+        save(); renderAll(); dlg.close();
+      };
+      dlg.showModal();
+    }
+
+    function openEquip(slot){
+      const choices = state.items.filter(i=>i.slot===slot);
+      if(!choices.length){ alert('No item for this slot yet. Win rewards to find gear!'); return; }
+      const names = choices.map(i=>i.name).join('\n');
+      const pick = prompt(`Equip to ${slotLabels[slot]}:\n${names}\nType the exact name.`);
+      const item = choices.find(i=>i.name.toLowerCase()===String(pick||'').toLowerCase());
+      if(item){ state.gear[slot]=item.id; save(); renderAll(); }
+    }
+
+    //Add Task dialog
+    document.getElementById('addTaskForm').onsubmit = (e)=>{
+      e.preventDefault(); const fd=new FormData(e.target);
+      const t={ id:'t_'+Math.random().toString(36).slice(2,7), title:fd.get('title'), type:fd.get('type'), progress:0, exp:Number(fd.get('exp')), gold:Number(fd.get('gold')), diamonds:Number(fd.get('diamonds')) };
+      state.tasks.unshift(t); save(); renderTasks(); document.getElementById('addTaskDialog').close(); e.target.reset();
+    };
+
+    //Shop button event hook 
+    document.getElementById('shopBtn').onclick = ()=> document.dispatchEvent(new CustomEvent('nav:shop'));
+
+    //Initial render
+    function renderAll(){ renderSlots(); renderStats(); renderTasks(); renderInventory(); }
+    renderAll();
+
+    //Public API for other pages (Shop, Level Up, Quest Complete)
+    window.Questify = {
+      getState: () => structuredClone(state),
+      addCurrency: (c)=>{ addCurrency(c); save(); renderStats(); },
+      addExp: (n)=>{ addExp(n); save(); renderStats(); },
+      addItem: (item)=>{ state.items.push(item); save(); renderInventory(); },
+      addTask: (t)=>{ state.tasks.unshift(Object.assign({ id:'t_'+Math.random().toString(36).slice(2,7), progress:0, exp:10, gold:0, diamonds:0 }, t)); save(); renderTasks(); },
+      completeTask: (id)=>{
+        const t=state.tasks.find(x=>x.id===id); if(!t) return; t.progress=100; addExp(t.exp||10); addCurrency({gold:t.gold||0, diamonds:t.diamonds||0}); save(); renderAll();
+      },
+      equip: (slot, itemId)=>{ if(state.gearSlots.includes(slot)){ state.gear[slot]=itemId; save(); renderAll(); } },
+      reset: ()=>{ state=structuredClone(DEFAULT); save(); renderAll(); }
+    };
+  </script>
+</body>
+</html>

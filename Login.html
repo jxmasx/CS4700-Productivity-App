@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Questify – Login & Sign Up</title>
+  <link rel="stylesheet" href="styles/layout.css" />
+  <style>
+    
+    :root { --wood:#6e3f1c; --wood-dark:#4f2c10; --leaf:#3ca65c; --parch:#ead0a0; --parch2:#e1bd7d; --ink:#fffaf1; --shadow:0 12px 28px rgba(0,0,0,.32); }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0;background:linear-gradient(180deg,#f9efe2,#f5e4c8);font-family:ui-rounded,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;color:#2d1b0e;display:grid;place-items:center}
+
+    .wrap{width:min(1050px,94vw);max-width:1050px;padding:20px}
+    .auth{position:relative;display:grid;grid-template-columns:1fr 1fr;gap:24px}
+
+    /*Wooden sign */
+    .wood{position:relative;border-radius:24px;background:linear-gradient(180deg,var(--wood) 0%,var(--wood-dark) 100%);padding:26px;box-shadow:inset 0 -8px rgba(0,0,0,.25), var(--shadow)}
+    .panel{border-radius:18px;background:linear-gradient(180deg,var(--parch) 0%, var(--parch2) 100%);padding:26px 26px 30px;box-shadow:inset 0 0 0 8px rgba(0,0,0,.12)}
+
+    .title-band{position:absolute;left:50%;top:0;transform:translate(-50%,-50%);display:flex;align-items:center;gap:10px}
+    .leaf{width:58px;height:38px;background:var(--leaf);border-radius:50% 50% 6px 50%/60% 50% 6px 40%;filter:drop-shadow(0 2px 0 rgba(0,0,0,.15))}
+    .title{background:linear-gradient(#5e3517,#3f220e);color:var(--ink);font-weight:800;border-radius:14px;padding:10px 22px;font-size:clamp(18px,2.6vw,28px);box-shadow:inset 0 -6px rgba(0,0,0,.25),0 8px 16px rgba(0,0,0,.25)}
+
+    /*Form */
+    form{display:grid;gap:16px}
+    label{font-weight:800;font-size:clamp(14px,1.6vw,20px)}
+    .input{display:flex;align-items:center;gap:10px;background:#8b5e34;border-radius:999px;padding:12px 16px;box-shadow:inset 0 4px rgba(255,255,255,.12)}
+    .input input{border:0;outline:0;background:transparent;color:#fff7e8;width:100%;font-size:16px}
+    .input input::placeholder{color:#fbe5d0aa}
+
+    .row{display:flex;gap:12px;align-items:center;justify-content:space-between}
+    .link{background:none;border:0;color:#2f241a;text-decoration:underline;cursor:pointer}
+
+    .submit{display:flex;justify-content:flex-end}
+    .go{border:0;border-radius:999px;width:58px;aspect-ratio:1;background:#111;color:#fff;font-size:26px;cursor:pointer;box-shadow:0 10px 18px rgba(0,0,0,.35)}
+
+    .toggle{display:flex;gap:8px;justify-content:center;margin-top:10px}
+    .chip{border:0;border-radius:999px;padding:8px 12px;background:#2f241a;color:#fff7e8;font-weight:800;cursor:pointer;opacity:.9}
+    .chip[aria-pressed="true"]{outline:3px solid #8b5e34}
+
+    /*Passwords*/
+    .suffix-btn{border:0;background:rgba(0,0,0,.18);color:#fff;border-radius:999px;padding:6px 10px;cursor:pointer}
+    .meter{height:8px;border-radius:999px;background:#e8d9b6;overflow:hidden}
+    .meter>span{display:block;height:100%;width:0;background:linear-gradient(90deg,#ef4444,#f59e0b,#10b981);transition:width .25s ease}
+
+    @media (max-width:980px){ .auth{grid-template-columns:1fr} }
+  </style>
+</head>
+<body>
+  <main class="wrap" aria-label="Authentication">
+    <div class="toggle" role="tablist" aria-label="Auth toggle">
+      <button id="tabLogin" class="chip" role="tab" aria-selected="true" aria-pressed="true">Login</button>
+      <button id="tabSignup" class="chip" role="tab" aria-selected="false" aria-pressed="false">Sign Up</button>
+    </div>
+
+    <section class="auth" id="views">
+      <!-- LOGIN -->
+      <div class="wood" id="loginView" role="tabpanel" aria-labelledby="tabLogin">
+        <div class="title-band" aria-hidden="true">
+          <div class="leaf" style="transform:rotate(-18deg)"></div>
+          <div class="title">Log In</div>
+          <div class="leaf" style="transform:rotate(18deg) scaleX(-1)"></div>
+        </div>
+        <div class="panel">
+          <form id="loginForm" novalidate>
+            <div>
+              <label for="loginUser">Username</label>
+              <div class="input"><input id="loginUser" required autocomplete="username" placeholder="yourname" /></div>
+            </div>
+            <div>
+              <label for="loginPass">Password</label>
+              <div class="input">
+                <input id="loginPass" type="password" required autocomplete="current-password" placeholder="••••••••" />
+                <button class="suffix-btn" type="button" data-toggle="loginPass">Show</button>
+              </div>
+            </div>
+            <div class="row">
+              <label><input type="checkbox" id="remember" /> Remember me</label>
+              <button class="link" type="button" id="forgotBtn">Forgot?</button>
+            </div>
+            <div class="submit">
+              <button class="go" aria-label="Proceed" type="submit">➜</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- SIGN UP -->
+      <div class="wood" id="signupView" role="tabpanel" aria-labelledby="tabSignup" hidden>
+        <div class="title-band" aria-hidden="true">
+          <div class="leaf" style="transform:rotate(-18deg)"></div>
+          <div class="title">Sign Up</div>
+          <div class="leaf" style="transform:rotate(18deg) scaleX(-1)"></div>
+        </div>
+        <div class="panel">
+          <form id="signupForm" novalidate>
+            <div>
+              <label for="suEmail">Email</label>
+              <div class="input"><input id="suEmail" type="email" required autocomplete="email" placeholder="you@example.com" /></div>
+            </div>
+            <div>
+              <label for="suUser">Create Username</label>
+              <div class="input"><input id="suUser" required autocomplete="username" placeholder="yourname" /></div>
+            </div>
+            <div>
+              <label for="suPass">Create Password</label>
+              <div class="input">
+                <input id="suPass" type="password" required autocomplete="new-password" placeholder="At least 8 chars" />
+                <button class="suffix-btn" type="button" data-toggle="suPass">Show</button>
+              </div>
+              <div class="meter" aria-hidden="true"><span id="strength"></span></div>
+            </div>
+            <div class="submit">
+              <button class="go" aria-label="Create account" type="submit">➜</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    //Tabs
+    const tabLogin = document.getElementById('tabLogin');
+    const tabSignup = document.getElementById('tabSignup');
+    const loginView = document.getElementById('loginView');
+    const signupView = document.getElementById('signupView');
+    function show(view){
+      const login = view==='login';
+      loginView.hidden = !login; signupView.hidden = login;
+      tabLogin.setAttribute('aria-pressed', login); tabLogin.setAttribute('aria-selected', login);
+      tabSignup.setAttribute('aria-pressed', !login); tabSignup.setAttribute('aria-selected', !login);
+    }
+    tabLogin.addEventListener('click', ()=> show('login'));
+    tabSignup.addEventListener('click', ()=> show('signup'));
+
+    //Show/Hide password buttons
+    document.querySelectorAll('[data-toggle]').forEach(btn => btn.addEventListener('click', () => {
+      const id = btn.getAttribute('data-toggle');
+      const input = document.getElementById(id);
+      input.type = input.type === 'password' ? 'text' : 'password';
+      btn.textContent = input.type === 'password' ? 'Show' : 'Hide';
+    }));
+
+    //Password strength
+    const suPass = document.getElementById('suPass');
+    const strength = document.getElementById('strength');
+    function score(p){
+      let s = 0; if(!p) return 0; if(p.length>=8) s++; if(/[A-Z]/.test(p)) s++; if(/[a-z]/.test(p)) s++; if(/\d/.test(p)) s++; if(/[^\w]/.test(p)) s++; return (s/5)*100;
+    }
+    suPass.addEventListener('input', ()=>{ strength.style.width = score(suPass.value) + '%'; });
+
+    //Demo localStorage auth (we will replace with backend later)
+    const LS_USERS = 'qf_users';
+    function readUsers(){ return JSON.parse(localStorage.getItem(LS_USERS) || '[]'); }
+    function writeUsers(arr){ localStorage.setItem(LS_USERS, JSON.stringify(arr)); }
+
+    //Sign up
+    const suForm = document.getElementById('signupForm');
+    suForm.addEventListener('submit', (e)=>{
+      e.preventDefault();
+      const email = document.getElementById('suEmail').value.trim();
+      const user = document.getElementById('suUser').value.trim();
+      const pass = document.getElementById('suPass').value;
+      if(!email || !user || pass.length < 8){ alert('Please fill all fields. Password must be at least 8 characters.'); return; }
+      const users = readUsers();
+      if(users.some(u => u.user.toLowerCase() === user.toLowerCase())){ alert('Username already taken.'); return; }
+      users.push({ email, user, pass }); writeUsers(users);
+      alert('Account created! You can log in now.');
+      show('login');
+    });
+
+    //Login
+    const lgForm = document.getElementById('loginForm');
+    lgForm.addEventListener('submit', (e)=>{
+      e.preventDefault();
+      const user = document.getElementById('loginUser').value.trim();
+      const pass = document.getElementById('loginPass').value;
+      const remember = document.getElementById('remember').checked;
+      const found = readUsers().find(u => u.user.toLowerCase()===user.toLowerCase() && u.pass===pass);
+      if(!found){ alert('Invalid credentials'); return; }
+    
+      document.dispatchEvent(new CustomEvent('auth:login', { detail: { user: found.user, email: found.email, remember } }));
+      alert(`Welcome back, ${found.user}! (Replace alerts with real routing.)`);
+    });
+
+    //Forgot 
+    document.getElementById('forgotBtn').addEventListener('click', ()=>{
+      const user = prompt('Enter your username for reset link (demo only)');
+      if(!user) return; alert('If this were real, we\'d email a reset link.');
+    });
+  </script>
+</body>
+</html>
