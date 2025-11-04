@@ -37,7 +37,7 @@ body {
   background: linear-gradient(180deg, #efe1c6 0%, #e4c891 100%);
   padding: clamp(18px, 3.5vw, 28px);
   box-shadow: inset 0 0 0 6px rgba(0,0,0,.12);
-  width: min(440px, 86vw);           /* <<< card width */
+  width: min(440px, 86vw);  
 }
 
 .title-band { 
@@ -103,4 +103,272 @@ img.pixelated {
   image-rendering: crisp-edges;
 }
 
+.tabbar {
+  margin-top: 20px;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
 
+.tab {
+  background: #bfbfbf;
+  border: 3px solid #000;
+  box-shadow: 3px 3px 0 #222;
+  padding: 6px 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.tab.active {
+  background: #e0e0e0;
+}
+
+.tab.action {
+  width: 36px;
+  text-align: center;
+}
+
+.tab-spacer {
+  flex: 1;
+}
+
+.task .task-label {
+  font-weight: 600;
+}
+
+.dashboard-root {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.dashboard-root .panel {
+  position: relative;
+}
+
+.dashboard-root .panel h2 {
+  position: absolute;
+  top: -20px;
+  left: 12px;
+  margin: 0;
+  background: #bfbfbf;
+  border: 3px solid #000;
+  display: inline-block;
+  padding: 4px 12px;
+  font-size: 18px;
+  box-shadow: 3px 3px 0 #222;
+}
+
+.dashboard-root .panel .info-content,
+.dashboard-root .inventory-grid,
+.dashboard-root .task-list,
+.dashboard-root .chart-placeholder {
+  margin-top: 24px;
+}
+
+.taskbar {
+  margin-top: 20px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.pill {
+  background: #e0e0e0;
+  border: 2px solid #000;
+  box-shadow: 2px 2px 0 #222;
+  padding: 4px 8px;
+  font-weight: 700;
+}
+
+.task-row {
+  display: grid;
+  grid-template-columns: 36px 1fr auto;
+  align-items: center;
+  border: 2px solid #000;
+  box-shadow: 3px 3px 0 #222;
+  padding: 0;
+  min-height: 44px;
+}
+
+.task-row.dragging {
+  opacity: 0.9;
+  transform: rotate(0.2deg);
+}
+
+.drag-handle {
+  width: 36px;
+  height: 100%;
+  border-right: 2px solid #000;
+  display: grid;
+  place-items: center;
+  font-weight: 900;
+  cursor: grab;
+  user-select: none;
+}
+
+.check-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+}
+
+.check-wrap input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: #1c75d8;
+}
+
+.title.done {
+  text-decoration: line-through;
+  opacity: 0.6;
+}
+
+.type-tag {
+  margin-left: auto;
+  font-size: 12px;
+  font-weight: 800;
+  border: 2px solid #000;
+  background: #fff;
+  padding: 2px 6px;
+  box-shadow: 2px 2px 0 #222;
+}
+
+.task-row-actions {
+  display: flex;
+  gap: 6px;
+  padding: 0 8px;
+}
+
+.task-row-actions button {
+  width: 30px;
+  height: 30px;
+  border: 2px solid #000;
+  background: #e0e0e0;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.task-row-actions button:hover {
+  background: #ccc;
+}
+
+.dashboard-root {
+  padding-top: 48px;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.dashboard-root .app-container.wb-layout {
+  width: 100%;
+  max-width: 1400px;
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  grid-template-rows: 220px 200px 240px 260px;
+  grid-template-areas:
+    "avatar    tasks"
+    "info      tasks"
+    "radar     tasks"
+    "inventory tasks";
+  gap: 20px;
+  align-items: start;
+}
+
+.avatar-panel  { grid-area: avatar; }
+.character-info.only-text { grid-area: info; }
+.radar-panel   { grid-area: radar; }
+.inventory     { grid-area: inventory; }
+.wb-tasks      { grid-area: tasks; }
+
+.dashboard-root .panel {
+  position: relative;
+  border-radius: calc(var(--radius-xl) - 6px);
+}
+
+.dashboard-root .panel h2 {
+  position: absolute;
+  top: -22px;
+  left: 10px;
+  margin: 0;
+  background: #bfbfbf;
+  border: 3px solid #000;
+  display: inline-block;
+  padding: 4px 12px;
+  font-size: 18px;
+  box-shadow: 3px 3px 0 #222;
+}
+
+/* Avatar / Name */
+.avatar-box {
+  margin-top: 22px;
+  width: 100%;
+  height: 160px;
+  border: 2px solid #000;
+  background: repeating-conic-gradient(#ccc 0deg 30deg, #eee 30deg 60deg);
+  display: grid;
+  place-items: center;
+}
+
+.avatar-img {
+  width: 180px;
+  height: 160px;
+  object-fit: contain;
+}
+
+.character-info.only-text .info-stack {
+  margin-top: 20px;
+  display: grid;
+  gap: 5px;
+}
+
+.radar-panel .radar-wrap {
+  width: 100%;
+  height: 180px;
+  margin-top: 18px;
+}
+
+.inventory-grid.wb-three {
+  margin-top: 20px;
+  display: grid;
+  grid-template-columns: repeat(3, 80px);
+  grid-auto-rows: 80px;
+  gap: 8px;
+  justify-content: center;
+}
+
+.inventory-grid.wb-three .slot {
+  width: 80px;
+  height: 80px;
+  background: #1a4f1a;
+  border: 2px solid #000;
+}
+
+/* Tasks */
+.wb-tasks {
+  grid-area: tasks;
+  min-height: calc(220px + 200px + 240px + 260px);
+  display: flex;
+  flex-direction: column;
+}
+
+.wb-tasks .task-list {
+  margin-top: 20px;
+  flex: 1;
+  overflow-y: auto;
+  padding-bottom: 10px;
+}
+
+@media (max-width: 1100px) {
+  .dashboard-root .app-container.wb-layout {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto;
+    grid-template-areas:
+      "avatar"
+      "info"
+      "radar"
+      "inventory"
+      "tasks";
+  }
+}
