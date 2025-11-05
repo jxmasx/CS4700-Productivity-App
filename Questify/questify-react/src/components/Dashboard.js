@@ -1,63 +1,237 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import TaskBoard from "./TaskBoard";
-import {
-  RadarChart,
-  PolarGrid,
-  PolarAngleAxis,
-  PolarRadiusAxis,
-  Radar,
-  ResponsiveContainer,
-  Tooltip,
-  Legend,
-} from "recharts";
 import "../style.css";
 import CalendarView from "./CalendarView";
 import PomodoroTimer from "./PomodoroTimer";
 
-export default function Dashboard() {
-  const base = process.env.PUBLIC_URL || "";
-  const [taskTab, setTaskTab] = useState("list"); 
+import {
+  Chart as ChartJS,
+  RadialLinearScale,
+  PointElement,
+  LineElement,
+  Filler,
+  Tooltip,
+  Legend,
+} from "chart.js";
+import { Radar as RadarChartJS } from "react-chartjs-2";
 
-  const character = {
+ChartJS.register(RadialLinearScale, PointElement, LineElement, Filler, Tooltip, Legend);
+
+const STORE = "qf_dashboard_state_v1";
+
+const clone = (obj) =>
+  typeof structuredClone === "function" ? structuredClone(obj) : JSON.parse(JSON.stringify(obj));
+
+const DEFAULT = {
+  profile: {
     name: "Ash",
     class: "Scholar",
-    guildRank: "Apprentice",
-    exp: 420,
-    stats: { HP: 24, MP: 12, STR: 6, DEX: 8, STAM: 9, INT: 11, WIS: 7, CHARM: 5 },
+    rank: "Apprentice",
+    streak: 1,
+    level: 1,
+    xp: 0,
+    xpMax: 100,
+    gold: 250,
+    diamonds: 5,
+  },
+  baseStats: {
+    HP: 60,
+    MP: 40,
+    STR: 4,
+    DEX: 6,
+    STAM: 5,
+    INT: 7,
+    WIS: 5,
+    CHARM: 3,
+  },
+  gearSlots: ["head", "chest", "arm", "pants", "foot", "weapon1", "weapon2", "extra"],
+  gear: {},
+  items: [
+    { id: "i1", name: "Bronze Sword", slot: "weapon1", bonus: { STR: 1 }, desc: "Reliable beginner blade." },
+    { id: "i2", name: "Oak Staff", slot: "weapon2", bonus: { INT: 1 }, desc: "Channeling focus for spells." },
+    { id: "i3", name: "Leather Cap", slot: "head", bonus: { STAM: 1 }, desc: "Light protection." },
+    { id: "i4", name: "Scholar Robe", slot: "chest", bonus: { INT: 1, WIS: 1 }, desc: "Robes of learning." },
+    { id: "i5", name: "Boots", slot: "foot", bonus: { DEX: 1 }, desc: "Move with purpose." },
+    { id: "i6", name: "Charm Locket", slot: "extra", bonus: { CHARM: 1 }, desc: "A glimmer of charisma." },
+  ],
+  tasks: [
+    { id: "t1", title: "Write 300 words", type: "task", progress: 0, exp: 40, gold: 20, diamonds: 0 },
+    { id: "t2", title: "Daily Water", type: "habit", progress: 0, exp: 15, gold: 5, diamonds: 0 },
+    { id: "t3", title: "PR for Sprint", type: "task", progress: 0, exp: 30, gold: 15, diamonds: 0 },
+  ],
+};
+
+export default function Dashboard() {
+  const base = process.env.PUBLIC_URL || "";
+  const [taskTab, setTaskTab] = useState("list");
+
+  const [state, setState] = useState(() => {
+    const saved = localStorage.getItem(STORE);
+    return saved ? JSON.parse(saved) : clone(DEFAULT);
+  });
+
+  useEffect(() => {
+    localStorage.setItem(STORE, JSON.stringify(state));
+  }, [state]);
+
+  const equipItem = (itemId, slot) => {
+    setState((prev) => ({ ...prev, gear: { ...prev.gear, [slot]: itemId } }));
   };
 
-  const radar = useMemo(() => {
-    const entries = Object.entries(character.stats);
-    const maxVal = Math.max(10, ...entries.map(([, v]) => v));
+  const unequipSlot = (slot) => {
+    setState((prev) => {
+      const next = { ...prev, gear: { ...prev.gear } };
+      delete next.gear[slot];
+      return next;
+    });
+  };
+
+  const slotLabels = {
+    head: "Head Gear",
+    chest: "Chest Gear",
+    arm: "Arm Gear",
+    pants: "Pants Gear",
+    foot: "Foot Gear",
+    weapon1: "Weapon #1",
+    weapon2: "Weapon #2 / Magic",
+    extra: "Xtra Item",
+  };
+
+  const gearBonuses = useMemo(() => {
+    const bonus = { STR: 0, DEX: 0, STAM: 0, INT: 0, WIS: 0, CHARM: 0 };
+    Object.values(state.gear).forEach((id) => {
+      const item = state.items.find((i) => i.id === id);
+      if (!item || !item.bonus) return;
+      for (const k in item.bonus) bonus[k] += item.bonus[k];
+    });
+    return bonus;
+  }, [state.gear, state.items]);
+
+  const totalStats = useMemo(() => {
+    const res = { ...state.baseStats };
+    for (const k in gearBonuses) res[k] = (res[k] || 0) + gearBonuses[k];
+    return res;
+  }, [state.baseStats, gearBonuses]);
+
+  function openEquip(slot) {
+    const choices = state.items.filter((i) => i.slot === slot);
+    if (!choices.length) {
+      alert("No item for this slot yet. Win rewards to find gear!");
+      return;
+    }
+    const names = choices.map((i) => i.name).join("\n");
+    const pick = prompt(`Equip to ${slotLabels[slot]}:\n${names}\nType the exact name.`);
+    const item = choices.find((i) => i.name.toLowerCase() === String(pick || "").toLowerCase());
+    if (item) equipItem(item.id, slot);
+  }
+
+  function renderSlot(slot) {
+    const equipped = state.gear[slot];
+    const isEquipped = !!equipped;
+
+    return (
+      <button
+        key={slot}
+        className="slot"
+        data-slot={slot}
+        data-equipped={isEquipped}
+        onClick={() => openEquip(slot)}
+        onContextMenu={(e) => {
+          e.preventDefault();
+          if (state.gear[slot]) unequipSlot(slot);
+        }}
+        title={
+          isEquipped
+            ? `${slotLabels[slot]} ✓ (left-click to change, right-click to unequip)`
+            : `${slotLabels[slot]} (left-click to equip)`
+        }
+      >
+        {isEquipped ? `${slotLabels[slot]} ✓` : slotLabels[slot]}
+      </button>
+    );
+  }
+
+  const slotsOrder = [
+    "head", "chest", "arm",
+    "weapon1", "weapon2", "extra",
+    "pants", "foot", null, 
+  ];
+
+  const radarData = useMemo(() => {
+    const STR = totalStats.STR ?? 0;
+    const DEX = totalStats.DEX ?? 0;
+    const INT = totalStats.INT ?? 0;
+    const WIS = totalStats.WIS ?? 0;
+    const CHARM = totalStats.CHARM ?? 0;
     return {
-      data: entries.map(([k, v]) => ({ subject: k, value: v })),
-      max: maxVal,
+      labels: ["Strength", "Dexterity", "Intelligence", "Wisdom", "Charisma"],
+      datasets: [
+        {
+          label: "Character Stats",
+          data: [STR, DEX, INT, WIS, CHARM],
+          backgroundColor: "rgba(34, 197, 94, 0.2)",
+          borderColor: "rgba(34, 197, 94, 1)",
+          borderWidth: 2,
+          pointBackgroundColor: "rgba(34, 197, 94, 1)",
+          pointBorderColor: "#fff",
+          pointHoverBackgroundColor: "#fff",
+          pointHoverBorderColor: "rgba(34, 197, 94, 1)",
+        },
+      ],
     };
-  }, [character.stats]);
+  }, [totalStats]);
+
+  const radarOptions = {
+    responsive: true,
+    maintainAspectRatio: true,
+    scales: {
+      r: {
+        angleLines: { display: true, color: "rgba(0,0,0,0.1)" },
+        ticks: { stepSize: 5 },
+      },
+    },
+    plugins: { legend: { display: false } },
+  };
+
+  const statsRows = useMemo(() => {
+    const t = totalStats;
+    return [
+      ["HP", t.HP],
+      ["MP", t.MP],
+      ["STR", t.STR],
+      ["DEX", t.DEX],
+      ["STAM", t.STAM],
+      ["INT", t.INT],
+      ["WIS", t.WIS],
+      ["CHARM", t.CHARM],
+    ];
+  }, [totalStats]);
 
   return (
     <div className="wrap">
       <div className="wood">
-        <div className="title-band">
-        </div>
+        <div className="title-band"></div>
 
         <div className="dashboard-root">
           <div className="app-container wb-layout">
             {/* Left column: Avatar + info */}
             <section className="panel avatar-panel">
-              <h2>{character.name}</h2>
+              <h2>{state.profile.name}</h2>
               <div className="avatar-box">
                 <img
-                  src={`${base}/public/sprites/npc_registar.png`}
+                  src={`${base}/sprites/npc_registar.png`}
                   alt="Avatar"
                   className="avatar-img"
                   onError={(e) => (e.currentTarget.style.display = "none")}
                 />
               </div>
               <div className="info-stack">
-                <div><strong>Class:</strong> {character.class}</div>
-                <div><strong>Guild Rank:</strong> {character.guildRank}</div>
-                <div style={{ marginTop: 20 }}><strong>EXP:</strong> {character.exp}</div>
+                <div style={{ marginTop: 12 }}></div>
+                <div><strong>Class:</strong> {state.profile.class}</div>
+                <strong>Level:</strong> {state.profile.level}
+                <div><strong>Guild Rank:</strong> {state.profile.rank}</div>
+                <div><strong>Guild Streak:</strong> {state.profile.streak}</div>
+                <div><strong>EXP:</strong> {state.profile.xp} / {state.profile.xpMax}</div>
               </div>
             </section>
 
@@ -65,22 +239,15 @@ export default function Dashboard() {
             <section className="panel radar-panel">
               <h2>Character Stats</h2>
               <div className="radar-wrap">
-                <ResponsiveContainer>
-                  <RadarChart data={radar.data}>
-                    <PolarGrid />
-                    <PolarAngleAxis dataKey="subject" />
-                    <PolarRadiusAxis angle={30} domain={[0, radar.max]} />
-                    <Tooltip />
-                    <Legend />
-                    <Radar
-                      name={character.name}
-                      dataKey="value"
-                      stroke="#1c75d8"
-                      fill="#5dcaff"
-                      fillOpacity={0.35}
-                    />
-                  </RadarChart>
-                </ResponsiveContainer>
+                <RadarChartJS data={radarData} options={radarOptions} />
+              </div>
+              <div className="stat-list">
+                {statsRows.map(([k, v]) => (
+                  <div className="row" key={k}>
+                    <span>{k}</span>
+                    <strong>{String(v)}</strong>
+                  </div>
+                ))}
               </div>
             </section>
 
@@ -88,9 +255,9 @@ export default function Dashboard() {
             <section className="panel inventory">
               <h2>Inventory</h2>
               <div className="inventory-grid wb-three">
-                {Array.from({ length: 9 }).map((_, i) => (
-                  <div className="slot" key={i} />
-                ))}
+                {slotsOrder.map((slot, i) =>
+                  slot ? renderSlot(slot) : <div className="slot" key={`empty-${i}`} />
+                )}
               </div>
             </section>
 
