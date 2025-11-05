@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useUser } from "../contexts/UserContext";
 
 export default function Login() {
   const [user, setUser] = useState("");
@@ -7,20 +8,42 @@ export default function Login() {
   const [showPass, setShowPass] = useState(false);
   const [remember, setRemember] = useState(false);
   const navigate = useNavigate();
+  const { fetchUserById } = useUser();
 
-  const readUsers = () => JSON.parse(localStorage.getItem("qf_users") || "[]");
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const found = readUsers().find(
-      (u) => u.user.toLowerCase() === user.toLowerCase() && u.pass === pass
-    );
-    if (!found) {
-      alert("Invalid credentials");
+
+    if (!user || !pass) {
+      alert("Please enter both username and password");
       return;
     }
-    localStorage.setItem("activeUser", JSON.stringify(found));
-    navigate("/dashboard");
+
+    try {
+      const response = await fetch('http://127.0.0.1:5000/api/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          display_name: user,
+          password: pass
+        })
+      });
+
+      if (!response.ok) {
+        alert('Failed to log in');
+        return;
+      }
+
+      const result = await response.json();
+      
+      if (result.id) {
+        await fetchUserById(result.id);
+        navigate("/dashboard");
+      }
+    } catch (error) {
+      alert('Failed to log in');
+    }
   };
 
   return (

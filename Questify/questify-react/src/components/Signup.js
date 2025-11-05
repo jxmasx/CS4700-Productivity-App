@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useUser } from "../contexts/UserContext";
 
 export default function Signup() {
   const [email, setEmail] = useState("");
@@ -8,9 +9,43 @@ export default function Signup() {
   const [showPass, setShowPass] = useState(false);
   const [strength, setStrength] = useState(0);
   const navigate = useNavigate();
+  const { fetchUserById } = useUser();
 
-  const readUsers = () => JSON.parse(localStorage.getItem("qf_users") || "[]");
-  const writeUsers = (arr) => localStorage.setItem("qf_users", JSON.stringify(arr));
+  async function readUsers() {
+    try {
+      const response = await fetch('http://127.0.0.1:5000/api/users');
+      const data = await response.json();
+      return data
+
+    } catch (error) {
+      alert('Error: ' + error);
+    }
+  }
+
+  async function writeUser(email, username, password) {
+    try {
+      const response = await fetch('http://127.0.0.1:5000/api/signup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: email,
+          display_name: username,
+          password: password
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create account');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Signup error:', error);
+      throw error;
+    }
+  }
 
   const scorePassword = (p) => {
     let s = 0;
@@ -27,21 +62,29 @@ export default function Signup() {
     setStrength(scorePassword(value));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!email || !user || pass.length < 8) {
       alert("Please fill all fields. Password must be at least 8 characters.");
       return;
     }
-    const users = readUsers();
-    if (users.some((u) => u.user.toLowerCase() === user.toLowerCase())) {
-      alert("Username already taken.");
-      return;
+
+    try {
+      const users = await readUsers();
+      if (users.some((u) => u.display_name.toLowerCase() === user.toLowerCase())) {
+        alert("Username already taken.");
+        return;
+      }
+
+      const result = await writeUser(email, user, pass);
+      if (result.id) {
+        await fetchUserById(result.id);
+        alert("Account created. Welcome to Questify!");
+        setTimeout(() => navigate("/build-adventurer"), 1500);
+      }
+    } catch (error) {
+      alert(error.message || "Error creating account. Please try again.");
     }
-    users.push({ email, user, pass });
-    writeUsers(users);
-    alert("Account created. Welcome to Questify!");
-    setTimeout(() => navigate("/build-adventurer"), 1500);
   };
 
   return (
