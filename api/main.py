@@ -31,12 +31,9 @@ API.include_router(auth_router)
 if __name__ == "__main__":
     import uvicorn
     import traceback
-    import msvcrt
 
     try:
         uvicorn.run(API, host="0.0.0.0", port=5000)
     except Exception as e:
         print("\nError occurred:")
         traceback.print_exc()
-        print("\nPress any key to exit...")
-        msvcrt.getch()
