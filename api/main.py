@@ -16,7 +16,7 @@ API.add_middleware(
     CORSMiddleware,
     # allow_origins=[os.getenv("FRONTEND_ORIGIN", "http://localhost:3000")],
     allow_origins=["*"],
-    allow_credentials=False,
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -34,7 +34,7 @@ if __name__ == "__main__":
     import msvcrt
 
     try:
-        uvicorn.run(API, host="127.0.0.1", port=5000)
+        uvicorn.run(API, host="0.0.0.0", port=5000)
     except Exception as e:
         print("\nError occurred:")
         traceback.print_exc()
