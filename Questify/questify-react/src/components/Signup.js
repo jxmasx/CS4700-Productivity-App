@@ -95,7 +95,7 @@ export default function Signup() {
         alignItems: "center",
         justifyContent: "center",
         height: "100vh",
-        background: "linear-gradient(180deg, #74b9ff 0%, #1e6dd8 100%)",
+        background: "rgba(122, 203, 255, 1)",
       }}
     >
       <div className="wood">

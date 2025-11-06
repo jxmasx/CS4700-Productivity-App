@@ -84,7 +84,7 @@ function SpritePreview({ species, outfit, parts, name }) {
           aspectRatio: "1 / 1",
           margin: "0 auto 16px",
           borderRadius: 16,
-          background: "linear-gradient(180deg,#f7efe1,#ead3a1)",
+          background: "rgba(122, 203, 255, 1)",
           boxShadow: "inset 0 0 0 2px rgba(0,0,0,.08)",
           overflow: "hidden",
         }}

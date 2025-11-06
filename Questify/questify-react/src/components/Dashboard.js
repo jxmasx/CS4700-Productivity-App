@@ -35,8 +35,6 @@ const DEFAULT = {
     diamonds: 5,
   },
   baseStats: {
-    HP: 60,
-    MP: 40,
     STR: 4,
     DEX: 6,
     STAM: 5,
@@ -193,20 +191,6 @@ export default function Dashboard() {
     plugins: { legend: { display: false } },
   };
 
-  const statsRows = useMemo(() => {
-    const t = totalStats;
-    return [
-      ["HP", t.HP],
-      ["MP", t.MP],
-      ["STR", t.STR],
-      ["DEX", t.DEX],
-      ["STAM", t.STAM],
-      ["INT", t.INT],
-      ["WIS", t.WIS],
-      ["CHARM", t.CHARM],
-    ];
-  }, [totalStats]);
-
   return (
     <div className="wrap">
       <div className="wood">
@@ -226,7 +210,7 @@ export default function Dashboard() {
                 />
               </div>
               <div className="info-stack">
-                <div style={{ marginTop: 12 }}></div>
+                <div style={{ marginTop: 15 }}></div>
                 <div><strong>Class:</strong> {state.profile.class}</div>
                 <strong>Level:</strong> {state.profile.level}
                 <div><strong>Guild Rank:</strong> {state.profile.rank}</div>
@@ -241,14 +225,6 @@ export default function Dashboard() {
               <div className="radar-wrap">
                 <RadarChartJS data={radarData} options={radarOptions} />
               </div>
-              <div className="stat-list">
-                {statsRows.map(([k, v]) => (
-                  <div className="row" key={k}>
-                    <span>{k}</span>
-                    <strong>{String(v)}</strong>
-                  </div>
-                ))}
-              </div>
             </section>
 
             {/* Left column: Inventory */}
@@ -262,8 +238,8 @@ export default function Dashboard() {
             </section>
 
             {/* Right column: Tasks */}
-            <section className="panel tasks tasks-tall wb-tasks">
-              <div className="tabbar parchment-tabs">
+           <section className="panel tasks tasks-tall wb-tasks">
+              <div className="tabbar header-buttons">
                 <button
                   className={`tab ${taskTab === "list" ? "active" : ""}`}
                   onClick={() => setTaskTab("list")}
@@ -282,24 +258,11 @@ export default function Dashboard() {
                 >
                   Pomodoro
                 </button>
-                <div className="tab-spacer" />
               </div>
 
-              {taskTab === "list" && (
-                <div className="task-list">
-                  <TaskBoard />
-                </div>
-              )}
-              {taskTab === "calendar" && (
-                <div className="task-list">
-                  <CalendarView />
-                </div>
-              )}
-              {taskTab === "pomodoro" && (
-                <div className="task-list">
-                  <PomodoroTimer />
-                </div>
-              )}
+              {taskTab === "list" && <TaskBoard />}
+              {taskTab === "calendar" && <CalendarView />}
+              {taskTab === "pomodoro" && <PomodoroTimer />}
             </section>
           </div>
         </div>

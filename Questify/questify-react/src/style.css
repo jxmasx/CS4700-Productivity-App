@@ -4,7 +4,7 @@ body {
 margin: 0;
 font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
 color: #1f2937;
-background: linear-gradient(180deg, #74b9ff 0%, #1e6dd8 100%);
+background: #7ACBFF;
 display: grid;
 place-items: center;
 }
@@ -222,7 +222,7 @@ height: calc(100vh - 120px);
 .avatar-box {
 margin-top: calc(var(--tab-h) - 6px);
 width: 100%;
-height: clamp(200px, 24vh, 280px);
+height: clamp(150px, 24vh, 280px);
 border: 2px solid #000;
 background: repeating-conic-gradient(#ccc 0deg 30deg, #eee 30deg 60deg);
 display: grid;
@@ -238,7 +238,7 @@ gap: 8px;
 
 .radar-panel .radar-wrap {
 width: 100%;
-height: clamp(140px, 18vh, 200px);
+height: clamp(300px, 18vh, 200px);
 margin-top: calc(var(--tab-h) - 6px);
 }
 
@@ -274,7 +274,7 @@ padding-bottom: 10px;
 .dashboard-root .app-container.wb-layout{
   grid-template-columns: minmax(340px, 1fr) 3fr;
   column-gap: 40px;
-  row-gap: 18px;
+  row-gap: 25px;
 }
 
 .dashboard-root .panel{
@@ -339,6 +339,45 @@ padding-bottom: 10px;
   .wrap { padding: var(--space-5); }
   .wood { padding: var(--space-5); }
 }
+.panel.wb-tasks {
+  position: relative;
+}
+
+.header-buttons {
+  position: absolute;
+  top: -33px;
+  left: 12px;
+  display: flex;
+  gap: 10px;
+  z-index: 3;
+}
+
+.header-buttons .tab {
+  background: linear-gradient(180deg, #f2c988 0%, #e9b76d 100%);
+  color: #2d1b0e;
+  border: 3px solid #2d1b0e;
+  box-shadow: 3px 3px 0 rgba(45, 27, 14, 0.6);
+  font-size: 18px;
+  letter-spacing: .2px;
+  font-weight: 800;
+  letter-spacing: 0.2px;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.header-buttons .tab.active {
+  transform: translateY(-2px);
+  box-shadow: 4px 4px 0 rgba(45, 27, 14, 0.6);
+}
+
+.header-buttons .tab:hover {
+  transform: translateY(-2px);
+}
+
+.panel.wb-tasks > .task-list {
+  margin-top: 80px;
+}
+
 
 @media (max-width: 1100px) {
 .dashboard-root .app-container.wb-layout {
@@ -346,7 +385,6 @@ grid-template-columns: 1fr;
 grid-template-rows: auto;
 grid-template-areas:
 "avatar"
-"info"
 "radar"
 "inventory"
 "tasks";
