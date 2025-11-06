@@ -3,6 +3,7 @@ from pydantic import BaseModel, EmailStr
 from typing import Optional
 from db import get_db, Base
 import bcrypt
+from datetime import datetime
 from sqlalchemy import Column, Integer, String, BLOB
 from sqlalchemy.orm import Session
 import logging
@@ -16,7 +17,7 @@ class UserItem(Base):
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String, unique=True, nullable=False)
     display_name = Column(String, nullable=False)
-    created_at = Column(String, nullable=False)
+    created_at = Column(String, nullable=False, default=lambda: datetime.now().isoformat())
     level = Column(Integer, nullable=False, default=1)
     xp = Column(Integer, nullable=False, default=0)
     hp = Column(Integer, nullable=False, default=100)
@@ -98,7 +99,7 @@ async def create_item(item: SignupIn, db: Session = Depends(get_db)):
         
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail="Internal server error: "+str(e))
 
     return UserOut(id=db_item.id)
 

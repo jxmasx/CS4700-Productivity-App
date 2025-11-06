@@ -1,3 +1,5 @@
+# from cs4700 folder: python -m PyInstaller --add-data "db/questify.db;db" --onefile api/main.py --distpath ap
+
 import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -28,5 +30,13 @@ API.include_router(auth_router)
 
 if __name__ == "__main__":
     import uvicorn
+    import traceback
+    import msvcrt
 
-    uvicorn.run(API, host="127.0.0.1", port=5000)
+    try:
+        uvicorn.run(API, host="127.0.0.1", port=5000)
+    except Exception as e:
+        print("\nError occurred:")
+        traceback.print_exc()
+        print("\nPress any key to exit...")
+        msvcrt.getch()

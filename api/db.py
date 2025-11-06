@@ -1,18 +1,26 @@
-# import sqlite3
-# from contextlib import contextmanager
 from pathlib import Path
 import sqlalchemy
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+import sys
+import os
 
-# DB_PATH = Path(__file__).resolve().parent.parent / "db" / "questify.db"
-# DB_PATH = "sqlite:///../db/questify.db"
-DB_PATH = f"sqlite:///{Path(__file__).resolve().parent.parent}/db/questify.db"
+def get_db_path():
+    if getattr(sys, 'frozen', False):
+        application_path = os.path.dirname(os.path.dirname(sys.executable))
+    else:
+        application_path = Path(__file__).resolve().parent.parent
+    
+    db_path = os.path.join(application_path, 'db', 'questify.db')
+    return f"sqlite:///{db_path}"
+
+# DB_PATH = f"sqlite:///{Path(__file__).resolve().parent.parent}/db/questify.db"
+DB_PATH = get_db_path()
 engine = create_engine(DB_PATH)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = sqlalchemy.orm.declarative_base()
 
-Base.metadata.create_all(bind=engine)
+# Base.metadata.create_all(bind=engine)
 
 def get_db():
     db = SessionLocal()
@@ -20,17 +28,3 @@ def get_db():
         yield db
     finally:
         db.close()
-
-# def _connect():
-#     conn = sqlite3.connect(DB_PATH)
-#     conn.row_factory = sqlite3.Row
-#     conn.execute("PRAGMA foreign_keys = ON")
-#     return conn
-
-# @contextmanager
-# def get_conn():
-#     conn = _connect()
-#     try:
-#         yield conn
-#     finally:
-#         conn.close()
