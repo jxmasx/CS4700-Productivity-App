@@ -1,0 +1,13 @@
+{
+  "files": {
+    "main.css": "/CS4700-Productivity-App%20/static/css/main.a4b1fa2f.css",
+    "main.js": "/CS4700-Productivity-App%20/static/js/main.6d4cf1bf.js",
+    "index.html": "/CS4700-Productivity-App%20/index.html",
+    "main.a4b1fa2f.css.map": "/CS4700-Productivity-App%20/static/css/main.a4b1fa2f.css.map",
+    "main.6d4cf1bf.js.map": "/CS4700-Productivity-App%20/static/js/main.6d4cf1bf.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.a4b1fa2f.css",
+    "static/js/main.6d4cf1bf.js"
+  ]
+}
