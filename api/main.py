@@ -33,7 +33,8 @@ if __name__ == "__main__":
     import traceback
 
     try:
-        uvicorn.run(API, host="0.0.0.0", port=5000)
+        uvicorn.run(API, host="0.0.0.0", port=5000,
+                    ssl_keyfile="key.pem", ssl_certfile="cert.pem",)
     except Exception as e:
         print("\nError occurred:")
         traceback.print_exc()
