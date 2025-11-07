@@ -13,7 +13,7 @@ export default function Signup() {
 
   async function readUsers() {
     try {
-      const response = await fetch('http://3.134.83.135:5000/api/users');
+      const response = await fetch('http://3.134.83.135/api/users');
       const data = await response.json();
       return data
 
@@ -24,7 +24,7 @@ export default function Signup() {
 
   async function writeUser(email, username, password) {
     try {
-      const response = await fetch('http://3.134.83.135:5000/api/signup', {
+      const response = await fetch('http://3.134.83.135/api/signup', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
