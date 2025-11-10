@@ -2,8 +2,6 @@ import React, { useEffect, useMemo, useState } from "react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import { useUser } from "../contexts/UserContext";
 
-const STORAGE_KEY = "qf_tasks_v1";
-
 const TYPE_COLORS = {
   Habit: { bg: "#cfe4ff", stripe: "#4b90ff" },
   Daily: { bg: "#cfeecf", stripe: "#46a546" },
@@ -60,20 +58,6 @@ async function deleteTask(user_id, quest_id) {
     return false;
   }
 }
-
-// async function loadTasks() {
-//   try {
-//     const raw = localStorage.getItem(STORAGE_KEY);
-//     const raw = await readQuests(user.id)
-
-//     if (raw) return JSON.parse(raw);
-//   } catch { }
-//   return [
-//     { id: "t1", title: "Read 10 pages", type: "Habit", dueAt: null, done: false },
-//     { id: "t2", title: "AM workout", type: "Daily", dueAt: null, done: false },
-//     { id: "t3", title: "Finish dashboard layout", type: "To-Do", dueAt: null, done: false },
-//   ];
-// }
 
 const DEFAULT_TASKS = [
   { title: "Read 10 pages", type: "Habit", due_at: null, is_active: 1 },
