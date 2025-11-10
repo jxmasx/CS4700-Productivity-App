@@ -3,6 +3,7 @@ import TaskBoard from "./TaskBoard";
 import "../style.css";
 import CalendarView from "./CalendarView";
 import PomodoroTimer from "./PomodoroTimer";
+import { useUser } from "../contexts/UserContext";
 
 import {
   Chart as ChartJS,
@@ -17,14 +18,12 @@ import { Radar as RadarChartJS } from "react-chartjs-2";
 
 ChartJS.register(RadialLinearScale, PointElement, LineElement, Filler, Tooltip, Legend);
 
-const STORE = "qf_dashboard_state_v1";
-
 const clone = (obj) =>
   typeof structuredClone === "function" ? structuredClone(obj) : JSON.parse(JSON.stringify(obj));
 
 const DEFAULT = {
   profile: {
-    name: "Ash",
+    name: "None",
     class: "Scholar",
     rank: "Apprentice",
     streak: 1,
@@ -62,15 +61,50 @@ const DEFAULT = {
 export default function Dashboard() {
   const base = process.env.PUBLIC_URL || "";
   const [taskTab, setTaskTab] = useState("list");
+  const { user, isAuthenticated, loading } = useUser();
 
-  const [state, setState] = useState(() => {
-    const saved = localStorage.getItem(STORE);
-    return saved ? JSON.parse(saved) : clone(DEFAULT);
-  });
+  const USER_INFO = {
+    profile: {
+      name: user?.display_name || "N/A",
+      class: user?.class || "N/A",
+      rank: user?.guild_rank || "N/A",
+      streak: user?.streak || 0,
+      level: user?.level || 1,
+      xp: user?.xp || 0,
+      xpMax: user?.xpMax || 100,
+      gold: user?.gold || 0,
+      diamonds: user?.diamonds || 0,
+    },
+    baseStats: {
+      STR: user?.STR || 10,
+      DEX: user?.DEX || 10,
+      STAM: user?.STAM || 10,
+      INT: user?.INT || 10,
+      WIS: user?.WIS || 10,
+      CHARM: user?.CHARM || 10,
+    },
+    gearSlots: ["head", "chest", "arm", "pants", "foot", "weapon1", "weapon2", "extra"],
+    gear: {},
+    items: [
+      { id: "i1", name: "Bronze Sword", slot: "weapon1", bonus: { STR: 1 }, desc: "Reliable beginner blade." },
+      { id: "i2", name: "Oak Staff", slot: "weapon2", bonus: { INT: 1 }, desc: "Channeling focus for spells." },
+      { id: "i3", name: "Leather Cap", slot: "head", bonus: { STAM: 1 }, desc: "Light protection." },
+      { id: "i4", name: "Scholar Robe", slot: "chest", bonus: { INT: 1, WIS: 1 }, desc: "Robes of learning." },
+      { id: "i5", name: "Boots", slot: "foot", bonus: { DEX: 1 }, desc: "Move with purpose." },
+      { id: "i6", name: "Charm Locket", slot: "extra", bonus: { CHARM: 1 }, desc: "A glimmer of charisma." },
+    ],
+    tasks: [
+      { id: "t1", title: "Write 300 words", type: "task", progress: 0, exp: 40, gold: 20, diamonds: 0 },
+      { id: "t2", title: "Daily Water", type: "habit", progress: 0, exp: 15, gold: 5, diamonds: 0 },
+      { id: "t3", title: "PR for Sprint", type: "task", progress: 0, exp: 30, gold: 15, diamonds: 0 },
+    ],
+  }
+
+  const [state, setState] = useState(DEFAULT);
 
   useEffect(() => {
-    localStorage.setItem(STORE, JSON.stringify(state));
-  }, [state]);
+    setState(clone(USER_INFO))
+  }, [user, isAuthenticated, loading]);
 
   const equipItem = (itemId, slot) => {
     setState((prev) => ({ ...prev, gear: { ...prev.gear, [slot]: itemId } }));
@@ -152,7 +186,7 @@ export default function Dashboard() {
   const slotsOrder = [
     "head", "chest", "arm",
     "weapon1", "weapon2", "extra",
-    "pants", "foot", null, 
+    "pants", "foot", null,
   ];
 
   const radarData = useMemo(() => {
@@ -238,7 +272,7 @@ export default function Dashboard() {
             </section>
 
             {/* Right column: Tasks */}
-           <section className="panel tasks tasks-tall wb-tasks">
+            <section className="panel tasks tasks-tall wb-tasks">
               <div className="tabbar header-buttons">
                 <button
                   className={`tab ${taskTab === "list" ? "active" : ""}`}
