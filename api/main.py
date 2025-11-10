@@ -31,9 +31,13 @@ API.include_router(quests_router)
 if __name__ == "__main__":
     import uvicorn
     import traceback
+    import logging
 
+    # Enable logging
+    logging.basicConfig(level=logging.INFO)
+    
     try:
-        uvicorn.run(API, host="0.0.0.0", port=5000)
+        uvicorn.run(API, host="0.0.0.0", port=5000, log_level="info")
     except Exception as e:
         print("\nError occurred:")
         traceback.print_exc()
