@@ -10,7 +10,6 @@ import LevelUp from "./components/LevelUp";
 import QuestComplete from "./components/QuestComplete";
 import BuildAdventurer from "./components/BuildAdventurer";
 import IntroScene from "./components/IntroScene";
-import CanvasTodos from "./components/CanvasTodos"
 
 function App() {
   return (
