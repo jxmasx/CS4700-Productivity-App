@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 router = APIRouter(prefix="/api", tags=["quests"])
 
 class QuestItem(Base):
-    __tablename__ = "quests"
+    __tablename__ = "tasks"
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer)
     title = Column(String)
@@ -20,7 +20,7 @@ class QuestIn(BaseModel):
     title: str
     type: str = "todo"         # 'habit' | 'daily' | 'todo'
     due_at: Optional[str] = None
-    is_active: int
+    is_active: int = 1
 
 @router.get("/users/{user_id}/quests")
 def list_quests(user_id: int, db: Session = Depends(get_db)):

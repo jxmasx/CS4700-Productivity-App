@@ -82,7 +82,7 @@ const DEFAULT_TASKS = [
 ];
 
 export default function TaskBoard() {
-  const { user, isAuthenticated, loading } = useUser();
+  const { user } = useUser();
   const [tasks, setTasks] = useState([]);
 
   // Load tasks from database on mount, or create default tasks if none exist
