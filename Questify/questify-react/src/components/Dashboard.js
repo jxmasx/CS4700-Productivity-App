@@ -4,6 +4,7 @@ import "../style.css";
 import CalendarView from "./CalendarView";
 import PomodoroTimer from "./PomodoroTimer";
 import ConnectCalendarModal from "./ConnectCalendarModal";
+import TopNav from "./TopNav";
 import { API } from "../apiBase";
 
 import {
@@ -75,6 +76,21 @@ export default function Dashboard() {
     localStorage.setItem(STORE, JSON.stringify(state));
   }, [state]);
 
+  useEffect(() => {
+    const onEconomy = () => {
+      try {
+        const saved = localStorage.getItem(STORE);
+        if (saved) {
+          const latest = JSON.parse(saved);
+          setState((prev) => ({ ...prev, profile: { ...prev.profile, ...latest.profile } }));
+        }
+      } catch {}
+    };
+    window.addEventListener("economy:changed", onEconomy);
+    return () => window.removeEventListener("economy:changed", onEconomy);
+  }, []);
+
+  // calendar connect prompt
   useEffect(() => {
     const check = async () => {
       if (taskTab !== "calendar") return;
@@ -219,10 +235,19 @@ export default function Dashboard() {
 
   return (
     <div className="wrap">
+      <TopNav
+        gold={state.profile.gold}
+        diamonds={state.profile.diamonds}
+        onAvatar={() => window.dispatchEvent(new CustomEvent("nav:go", { detail: { to: "avatar" } }))}
+        onGuild={() => window.dispatchEvent(new CustomEvent("nav:go", { detail: { to: "guild" } }))}
+        onConnect={() => window.dispatchEvent(new CustomEvent("nav:go", { detail: { to: "connect" } }))}
+        onSettings={() => window.dispatchEvent(new CustomEvent("nav:go", { detail: { to: "settings" } }))}
+      />
+
       <div className="wood">
         <div className="title-band"></div>
 
-        <div className="dashboard-root">
+        <div className="dashboard-root container-1200">
           <div className="app-container wb-layout">
             <section className="panel avatar-panel">
               <h2>{state.profile.name}</h2>
