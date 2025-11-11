@@ -25,6 +25,13 @@ class UserItem(Base):
     gold = Column(Integer, nullable=False, default=0)
     diamonds = Column(Integer, nullable=False, default=0)
     guild_rank = Column(String, nullable=False, default='Bronze')
+    guild_streak = Column(Integer, nullable=False, default=0)
+    strength = Column(Integer, nullable=False, default=0)
+    dexterity = Column(Integer, nullable=False, default=0)
+    intelligence = Column(Integer, nullable=False, default=0)
+    wisdom = Column(Integer, nullable=False, default=0)
+    charisma = Column(Integer, nullable=False, default=0)
+    user_class = Column(String, nullable=False, default='Bronze')
 
 class PassItem(Base):
     __tablename__ = "user_passwords"

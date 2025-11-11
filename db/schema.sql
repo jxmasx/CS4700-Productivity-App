@@ -1,5 +1,5 @@
 --
--- File generated with SQLiteStudio v3.4.17 on Tue Nov 11 14:07:35 2025
+-- File generated with SQLiteStudio v3.4.17 on Tue Nov 11 14:23:32 2025
 --
 -- Text encoding used: System
 --
@@ -171,7 +171,7 @@ CREATE TABLE IF NOT EXISTS user_passwords (
           );
 
 -- Table: users
-CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, email TEXT UNIQUE NOT NULL, display_name TEXT NOT NULL, created_at TEXT NOT NULL DEFAULT (datetime('now')), level INTEGER NOT NULL DEFAULT 1, xp INTEGER NOT NULL DEFAULT 0, xp_max INTEGER NOT NULL DEFAULT (100), hp INTEGER NOT NULL DEFAULT 100, mana INTEGER NOT NULL DEFAULT 50, gold INTEGER NOT NULL DEFAULT 0, diamonds INTEGER NOT NULL DEFAULT 0, guild_rank TEXT NOT NULL DEFAULT 'Bronze', guild_streak INTEGER NOT NULL DEFAULT (0), strength INTEGER NOT NULL DEFAULT (0), dexterity INTEGER NOT NULL DEFAULT (0), intelligence INTEGER NOT NULL DEFAULT (0), wisdom INTEGER NOT NULL DEFAULT (0), charisma INTEGER NOT NULL DEFAULT (0), class TEXT NOT NULL DEFAULT Classless);
+CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, email TEXT UNIQUE NOT NULL, display_name TEXT NOT NULL, created_at TEXT NOT NULL DEFAULT (datetime('now')), level INTEGER NOT NULL DEFAULT 1, xp INTEGER NOT NULL DEFAULT 0, xp_max INTEGER NOT NULL DEFAULT (100), hp INTEGER NOT NULL DEFAULT 100, mana INTEGER NOT NULL DEFAULT 50, gold INTEGER NOT NULL DEFAULT 0, diamonds INTEGER NOT NULL DEFAULT 0, guild_rank TEXT NOT NULL DEFAULT 'Bronze', guild_streak INTEGER NOT NULL DEFAULT (0), strength INTEGER NOT NULL DEFAULT (0), dexterity INTEGER NOT NULL DEFAULT (0), intelligence INTEGER NOT NULL DEFAULT (0), wisdom INTEGER NOT NULL DEFAULT (0), charisma INTEGER NOT NULL DEFAULT (0), user_class TEXT NOT NULL DEFAULT Classless);
 
 -- Index: idx_focus_user_time
 CREATE INDEX IF NOT EXISTS idx_focus_user_time ON focus_sessions(user_id, started_at);
