@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel, EmailStr
 from typing import Optional
-from db import get_db, Base
+from .db import get_db, Base
 import bcrypt
 from sqlalchemy import Column, Integer, String, BLOB
 from sqlalchemy.orm import Session

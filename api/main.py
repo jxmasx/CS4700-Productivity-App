@@ -1,32 +1,27 @@
-import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from dotenv import load_dotenv
 
-from auth import router as auth_router
-# from quests import router as quests_router
+from .oauth import router as oauth_router
+from .calendar_api import router as calendar_router
+from .db import Base, engine 
 
-load_dotenv()
+app = FastAPI()
 
-API = FastAPI(title="Questify API", version="0.1.0")
+ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "https://questify.duckdns.org",
+]
 
-API.add_middleware(
+app.add_middleware(
     CORSMiddleware,
-    # allow_origins=[os.getenv("FRONTEND_ORIGIN", "http://localhost:3000")],
-    allow_origins=["*"],
-    allow_credentials=False,
+    allow_origins=ALLOWED_ORIGINS,
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-@API.get("/api/health")
-def health():
-    return {"ok": True}
+Base.metadata.create_all(bind=engine)
 
-API.include_router(auth_router)
-# API.include_router(quests_router)
-
-if __name__ == "__main__":
-    import uvicorn
-
-    uvicorn.run(API, host="127.0.0.1", port=5000)
+app.include_router(oauth_router, prefix="/api")
+app.include_router(calendar_router, prefix="/api")
