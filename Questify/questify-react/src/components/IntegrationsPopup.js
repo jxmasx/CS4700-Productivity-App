@@ -11,6 +11,8 @@
  -----------------------------------------------------------------------------*/
 
 import React, { useState } from "react";
+import QuestifyNavBar from "./QuestifyNavBar";
+
 
 const IntegrationsPopup = ({ isOpen, onClose, onConnected }) => {
   const [connectCanvas, setConnectCanvas] = useState(false);

@@ -3,6 +3,7 @@ import TaskBoard from "./TaskBoard";
 import "../style.css";
 import CalendarView from "./CalendarView";
 import PomodoroTimer from "./PomodoroTimer";
+import QuestifyNavBar from "./QuestifyNavBar";
 
 import {
   Chart as ChartJS,

@@ -10,6 +10,8 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
+import QuestifyNavBar from "./QuestifyNavBar";
+
 
 const STORAGE_KEY = "qf_tasks_v1";
 

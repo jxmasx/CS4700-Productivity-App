@@ -16,6 +16,8 @@ import CalendarView from "./CalendarView";
 import PomodoroTimer from "./PomodoroTimer";
 import QuestCard from "./QuestCard";
 import IntegrationsPopup from "./IntegrationsPopup";
+import QuestifyNavBar from "./QuestifyNavBar";
+
 
 import {
   Chart as ChartJS,
@@ -237,6 +239,9 @@ export default function Dashboard() {
     <div className="wrap">
       <div className="wood">
         <div className="title-band"></div>
+
+        {/*Global Navigation – links Dashboard, Adventurer, Guild Hall, Intro*/}
+        <QuestifyNavBar />
 
         <div className="dashboard-root">
           <div className="app-container wb-layout">

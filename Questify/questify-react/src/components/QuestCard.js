@@ -13,6 +13,8 @@
  -----------------------------------------------------------------------------*/
 
 import React, { useEffect, useState } from "react";
+import QuestifyNavBar from "./QuestifyNavBar";
+
 
 const PENDING_REWARDS_KEY = "pendingRewards";
 const QUEST_STATUS_KEY = "questStatus";

@@ -16,6 +16,9 @@ import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import NPCDialog from "./NPCDialog";
 import AdventurerNamePlate from "./AdventurerNamePlate";
+import QuestifyNavBar from "./QuestifyNavBar";
+import QuestCard from "./QuestCard";
+import IntegrationsPopup from "./IntegrationsPopup";
 
 const SPECIES = ["human", "elf", "orc", "dwarf"];
 
@@ -106,9 +109,45 @@ function SpritePreview({ species, outfit, parts, name }) {
     [species, outfit, parts]
   );
 
+
+  {/*Right side: preview + name plate*/}
+<div
+  style={{
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    minHeight: "100%",
+    width: "100%",
+    gap: "1rem",
+  }}
+>
+  <SpritePreview
+    species={species}
+    outfit={outfit}
+    parts={parts}
+    name={name}
+  />
+
+  <AdventurerNamePlate
+    name={name || "New Adventurer"}
+    species={species}
+    gold={0}                 /*starting gold (0 here; GuildHall will show real)*/
+    guildStreak={0}          /*streak starts at 0*/
+    rank="Unranked"          /*placeholder rank until we assign ranks*/
+    expPercent={0}
+    /*simple sprite: use the outfit layer as the “portrait”*/
+    spriteUrl={`/sprites/avatar/outfit_${outfit}_${species}.png`}
+    level={1}
+    actionLabel="Visit Guild Hall"
+   //onAction={() => navigate("/guild-hall")}
+  />
+</div>
+
+
   return (
     <div style={{ textAlign: "center", color: "#3f220e", width: "100%" }}>
-      {/*Creates sprite box */}
+      {/*Creates sprite box*/}
       <div
         style={{
           position: "relative",
@@ -219,6 +258,10 @@ export default function BuildAdventurer() {
         padding: "2rem 1rem",
       }}
     >
+
+         {/*Global Navigation Bar – same across all of Questify*/}
+        <QuestifyNavBar />
+
       <div
         className="wood"
         style={{ width: "min(1100px, 96vw)", padding: "1.5rem" }}

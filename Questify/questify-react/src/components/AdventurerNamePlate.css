@@ -1,0 +1,226 @@
+/*Outer card*/
+.nameplate-card {
+  display: flex;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: 16px;
+  background: #f7e8cf;
+  border: 2px solid #8b5e34;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+  color: #3f220e;
+  align-items: stretch;
+}
+
+/*Active/hover state when the card is clickable*/
+.nameplate-card--clickable {
+  cursor: pointer;
+  transition: transform 120ms ease, box-shadow 120ms ease;
+}
+
+.nameplate-card--clickable:hover,
+.nameplate-card--clickable:focus-visible {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+}
+
+/*Left side: avatar*/
+.nameplate-left {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+}
+
+.avatar-frame {
+  position: relative;
+  padding: 4px;
+  border-radius: 12px;
+  background: #2f241a;
+  box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.4);
+}
+
+.avatar-inner {
+  width: 72px;
+  height: 72px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #7acbff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/*Sprite image inside the avatar box*/
+.avatar-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+
+/*Placeholder for when no sprite is available*/
+.avatar-placeholder {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #2f241a;
+  letter-spacing: 0.05em;
+}
+
+/*Level pill in the corner of the frame*/
+.avatar-level-pill {
+  position: absolute;
+  top: -8px;
+  right: -4px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: #111;
+  color: #fff7e8;
+  font-size: 0.6rem;
+  font-weight: 700;
+}
+
+/*Right side: text info*/
+.nameplate-right {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.nameplate-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.nameplate-line {
+  margin: 0;
+  font-size: 0.85rem;
+}
+
+.nameplate-label {
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+}
+
+.nameplate-value {
+  font-weight: 600;
+}
+
+/*Hearts row*/
+.nameplate-hearts {
+  display: flex;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+.heart-pixel {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.4);
+}
+
+.heart-pixel--filled {
+  background: #ff4f7b;
+}
+
+.heart-pixel--empty {
+  background: #f0d2c2;
+}
+
+/*Rank area*/
+.nameplate-rank-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.rank-label-wrapper {
+  font-size: 0.85rem;
+}
+
+.nameplate-rank-value {
+  font-weight: 700;
+}
+
+.rank-banners-row {
+  display: flex;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+.rank-banner {
+  flex: 1;
+  height: 6px;
+  border-radius: 999px;
+  opacity: 0.9;
+}
+
+.rank-banner--teal {
+  background: #27ae60;
+}
+
+.rank-banner--red {
+  background: #e74c3c;
+}
+
+.rank-banner--purple {
+  background: #9b59b6;
+}
+
+.rank-banner--blue {
+  background: #2980b9;
+}
+
+/*EXP row + action button*/
+.nameplate-exp-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.nameplate-exp-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.exp-bar {
+  position: relative;
+  flex: 1;
+  height: 8px;
+  border-radius: 999px;
+  background: #f2e0c2;
+  overflow: hidden;
+}
+
+.exp-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #f1c40f, #e67e22);
+  transition: width 160ms ease-out;
+}
+
+.exp-percent-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  min-width: 2.5rem;
+  text-align: right;
+}
+
+/*Small call-to-action button inside the plate*/
+.nameplate-action-button {
+  align-self: flex-start;
+  margin-top: 2px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: none;
+  background: #3b2a18;
+  color: #fff7e8;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+}
