@@ -5,9 +5,9 @@ from db import get_db, Base
 from sqlalchemy import Column, Integer, String
 from sqlalchemy.orm import Session
 
-router = APIRouter(prefix="/api", tags=["quests"])
+router = APIRouter(prefix="/api", tags=["tasks"])
 
-class QuestItem(Base):
+class TaskItem(Base):
     __tablename__ = "tasks"
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer)
@@ -16,22 +16,22 @@ class QuestItem(Base):
     due_at = Column(String)
     is_active = Column(Integer)
 
-class QuestIn(BaseModel):
+class TaskIn(BaseModel):
     title: str
     type: str = "todo"         # 'habit' | 'daily' | 'todo'
     due_at: Optional[str] = None
     is_active: int = 1
 
-@router.get("/users/{user_id}/quests")
-def list_quests(user_id: int, db: Session = Depends(get_db)):
-    db_items = db.query(QuestItem).filter(QuestItem.user_id == user_id).all()
+@router.get("/users/{user_id}/tasks")
+def list_tasks(user_id: int, db: Session = Depends(get_db)):
+    db_items = db.query(TaskItem).filter(TaskItem.user_id == user_id).all()
     
     return db_items
 
-@router.post("/users/{user_id}/quests", status_code=201)
-def create_quest(item: QuestIn, user_id: int, db: Session = Depends(get_db)):
+@router.post("/users/{user_id}/tasks", status_code=201)
+def create_task(item: TaskIn, user_id: int, db: Session = Depends(get_db)):
     try:
-        db_item = QuestItem(
+        db_item = TaskItem(
             user_id=user_id,
             title=item.title,
             type=item.type,
@@ -50,15 +50,15 @@ def create_quest(item: QuestIn, user_id: int, db: Session = Depends(get_db)):
 
     return db_item
 
-@router.put("/users/{user_id}/quests/{quest_id}")
-def update_quest(user_id: int, quest_id: int, item: QuestIn, db: Session = Depends(get_db)):
-    db_item = db.query(QuestItem).filter(
-        QuestItem.id == quest_id,
-        QuestItem.user_id == user_id
+@router.put("/users/{user_id}/tasks/{task_id}")
+def update_task(user_id: int, task_id: int, item: TaskIn, db: Session = Depends(get_db)):
+    db_item = db.query(TaskItem).filter(
+        TaskItem.id == task_id,
+        TaskItem.user_id == user_id
     ).first()
     
     if not db_item:
-        raise HTTPException(status_code=404, detail="Quest not found")
+        raise HTTPException(status_code=404, detail="Task not found")
     
     try:
         db_item.title = item.title
@@ -75,15 +75,15 @@ def update_quest(user_id: int, quest_id: int, item: QuestIn, db: Session = Depen
     
     return db_item
 
-@router.delete("/users/{user_id}/quests/{quest_id}", status_code=204)
-def delete_quest(user_id: int, quest_id: int, db: Session = Depends(get_db)):
-    db_item = db.query(QuestItem).filter(
-        QuestItem.id == quest_id,
-        QuestItem.user_id == user_id
+@router.delete("/users/{user_id}/tasks/{task_id}", status_code=204)
+def delete_task(user_id: int, task_id: int, db: Session = Depends(get_db)):
+    db_item = db.query(TaskItem).filter(
+        TaskItem.id == task_id,
+        TaskItem.user_id == user_id
     ).first()
     
     if not db_item:
-        raise HTTPException(status_code=404, detail="Quest not found")
+        raise HTTPException(status_code=404, detail="Task not found")
     
     try:
         db.delete(db_item)
