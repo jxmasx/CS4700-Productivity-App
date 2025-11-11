@@ -14,6 +14,10 @@
 
 import React from "react";
 import "./AdventurerNamePlate.css";
+import QuestifyNavBar from "./QuestifyNavBar";
+
+ {/*Global Navigation Bar – same across all of Questify*/}
+        <QuestifyNavBar />
 
 const AdventurerNamePlate = ({
   name = "New Adventurer",

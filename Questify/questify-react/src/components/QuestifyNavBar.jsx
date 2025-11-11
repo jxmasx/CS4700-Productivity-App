@@ -58,7 +58,7 @@ const QuestifyNavBar = () => {
       >
         {/*Dashboard*/}
         <Link
-          to="/"
+          to="/dashboard"
           style={{
             textDecoration: "none",
           }}

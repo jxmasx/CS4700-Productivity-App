@@ -280,8 +280,8 @@ const GuildHall = () => {
           <div style={{ fontWeight: 700 }}>
             Current Gold: <span style={{ fontWeight: 900 }}>{gold}</span>
           </div>
-
-          <button
+           
+         {/* <button
             type="button"
             className="chip"
             onClick={() => navigate("/")}
@@ -296,8 +296,9 @@ const GuildHall = () => {
             }}
           >
             Return to Dashboard
-          </button>
+          </button> */}
         </div>
+                
 
         {/*Main Grid: left (rewards) / right (shop + custom)*/}
         <div

@@ -1,5 +1,5 @@
 /* -----------------------------------------------------------------------------
-     CENTRAL PLAYER DASHBOARD aka Dashboard.js
+     CENTRAL PLAYER DASHBOARD aka TestDashboard.js
         - Avatar + profile info (class, level, rank, streak, XP)
         - Radar chart of stats
         - Gear slots & inventory

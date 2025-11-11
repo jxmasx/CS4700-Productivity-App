@@ -5,9 +5,9 @@ import Landing from "./components/Landing";
 import Login from "./components/Login";
 import Signup from "./components/Signup";
 import Dashboard from "./components/TestDashboard";
-import Shop from "./components/Shop";
-import LevelUp from "./components/LevelUp";
-import QuestComplete from "./components/QuestComplete";
+//import Shop from "./components/Shop"; /*Able to be deleted if we are */
+//import LevelUp from "./components/LevelUp";
+//import QuestComplete from "./components/QuestComplete";
 import BuildAdventurer from "./components/TestBuildAdventurer";
 import IntroScene from "./components/IntroScene";
 import QuestCard from "./components/QuestCard";
@@ -23,9 +23,6 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/shop" element={<Shop />} />
-          <Route path="/levelup" element={<LevelUp />} />
-          <Route path="/quest-complete" element={<QuestComplete />} />
           <Route path="/build-adventurer" element={<BuildAdventurer />} />
           <Route path="/intro-scene" element={<IntroScene />} />
           <Route path="/quest-card" element={<QuestCard />} />

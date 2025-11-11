@@ -1,5 +1,5 @@
 /*-----------------------------------------------------------------------------
-TestBuildAdventurer.js - Replace current BuildAdventurer if we prefer it
+TestBuildAdventurer.js - Replaces current BuildAdventurer if we prefer it
 "Choose Your Adventurer" character creation page.
 
 FEATURES - (Will have to be changed again)
@@ -17,8 +17,11 @@ import { useNavigate } from "react-router-dom";
 import NPCDialog from "./NPCDialog";
 import AdventurerNamePlate from "./AdventurerNamePlate";
 import QuestifyNavBar from "./QuestifyNavBar";
-import QuestCard from "./QuestCard";
-import IntegrationsPopup from "./IntegrationsPopup";
+/*import QuestCard from "./QuestCard";*/
+/*import IntegrationsPopup from "./IntegrationsPopup";*/
+
+ {/*Global Navigation Bar – same across all of Questify*/}
+        <QuestifyNavBar />
 
 const SPECIES = ["human", "elf", "orc", "dwarf"];
 
@@ -258,10 +261,6 @@ export default function BuildAdventurer() {
         padding: "2rem 1rem",
       }}
     >
-
-         {/*Global Navigation Bar – same across all of Questify*/}
-        <QuestifyNavBar />
-
       <div
         className="wood"
         style={{ width: "min(1100px, 96vw)", padding: "1.5rem" }}
@@ -271,6 +270,9 @@ export default function BuildAdventurer() {
           <div className="title">Choose Your Adventurer</div>
         </div>
         }
+
+        {/*Global Navigation Bar – same across all of Questify*/}
+               <QuestifyNavBar />
 
         <div
           className="panel"
@@ -435,7 +437,7 @@ export default function BuildAdventurer() {
                 marginTop: 12,
               }}
             >
-              {/*Creates submit button:Join the Guild*/}
+            {/*Creates submit button:Join the Guild
               <button
                 className="chip"
                 type="submit"
@@ -452,7 +454,8 @@ export default function BuildAdventurer() {
                 }}
               >
                 Join the Guild
-              </button>
+              </button> */}
+               
 
               {/*Links to Guild Hall & Shop*/}
               <button
