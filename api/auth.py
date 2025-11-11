@@ -78,8 +78,8 @@ async def read_items(db: Session = Depends(get_db)):
 # Signup with email, display_name, and password
 @router.post("/signup", response_model=UserOut)
 async def create_item(item: SignupIn, db: Session = Depends(get_db)):
-    # user_data = {"email": item.email, "display_name": item.display_name}
-    # db_item = UserItem(**user_data)
+    user_data = {"email": item.email, "display_name": item.display_name}
+    db_item = UserItem(**user_data)
 
     pass_hash = bcrypt.hashpw(item.password.encode(), bcrypt.gensalt())
 

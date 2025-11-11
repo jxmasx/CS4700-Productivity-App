@@ -1,102 +1,34 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
-import { useUser } from "../contexts/UserContext";
+
+const STORAGE_KEY = "qf_tasks_v1";
 
 const TYPE_COLORS = {
-  Habit: { bg: "#cfe4ff", stripe: "#4b90ff" },
-  Daily: { bg: "#cfeecf", stripe: "#46a546" },
+  Habit:   { bg: "#cfe4ff", stripe: "#4b90ff" },
+  Daily:   { bg: "#cfeecf", stripe: "#46a546" },
   "To-Do": { bg: "#ffd6ea", stripe: "#ff5aa5" },
 };
 
-async function readTasks(user_id) {
-    try {
-      const response = await fetch(`https://questify.duckdns.org/api/users/${user_id}/quests`);
-      const data = await response.json();
-      return data;
-    } catch (error) {
-      console.error('Error reading quests:', error);
-      return [];
-    }
-  }
-
-async function createTask(user_id, taskData) {
+function loadTasks() {
   try {
-    const response = await fetch(`https://questify.duckdns.org/api/users/${user_id}/quests`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(taskData)
-    });
-    return await response.json();
-  } catch (error) {
-    console.error('Error creating quest:', error);
-    return null;
-  }
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch {}
+  return [
+    { id: "t1", title: "Read 10 pages", type: "Habit", dueAt: null, done: false },
+    { id: "t2", title: "AM workout", type: "Daily", dueAt: null, done: false },
+    { id: "t3", title: "Finish dashboard layout", type: "To-Do", dueAt: null, done: false },
+  ];
 }
 
-async function updateTask(user_id, quest_id, taskData) {
-  try {
-    const response = await fetch(`https://questify.duckdns.org/api/users/${user_id}/quests/${quest_id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(taskData)
-    });
-    return await response.json();
-  } catch (error) {
-    console.error('Error updating quest:', error);
-    return null;
-  }
+function saveTasks(tasks) {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks)); } catch {}
 }
-
-async function deleteTask(user_id, quest_id) {
-  try {
-    await fetch(`https://questify.duckdns.org/api/users/${user_id}/quests/${quest_id}`, {
-      method: 'DELETE'
-    });
-    return true;
-  } catch (error) {
-    console.error('Error deleting quest:', error);
-    return false;
-  }
-}
-
-const DEFAULT_TASKS = [
-  { title: "Read 10 pages", type: "Habit", due_at: null, is_active: 1 },
-  { title: "AM workout", type: "Daily", due_at: null, is_active: 1 },
-  { title: "Finish dashboard layout", type: "To-Do", due_at: null, is_active: 1 },
-];
 
 export default function TaskBoard() {
-  const { user } = useUser();
-  const [tasks, setTasks] = useState([]);
+  const [tasks, setTasks] = useState(loadTasks);
 
-  // Load tasks from database on mount, or create default tasks if none exist
-  useEffect(() => {
-    async function fetchTasks() {
-      if (user && user.id) {
-        try {
-          const data = await readTasks(user.id);
-          if (data.length === 0) {
-            const createdTasks = [];
-            for (const defaultTask of DEFAULT_TASKS) {
-              const newTask = await createTask(user.id, defaultTask);
-              if (newTask) {
-                createdTasks.push(newTask);
-              }
-            }
-            
-            if (createdTasks.length > 0) {
-              setTasks(createdTasks);
-            }
-          } else {
-            setTasks(data);
-          }
-        } catch (error) {
-          console.error('Error in fetchTasks:', error);
-        }
-      }
-    }
-    fetchTasks();
-  }, [user]);
+  useEffect(() => { saveTasks(tasks); }, [tasks]);
 
   const onDragEnd = (result) => {
     if (!result.destination) return;
@@ -106,83 +38,41 @@ export default function TaskBoard() {
     setTasks(next);
   };
 
-  const addTask = async () => {
-    if (!user || !user.id) return;
-    
+  const addTask = () => {
     const title = prompt("Task title:");
     if (!title) return;
     const type = prompt('Type? Enter "Habit", "Daily" or "To-Do":', "To-Do");
     const norm = (type || "").trim();
     const valid = ["Habit", "Daily", "To-Do"].includes(norm) ? norm : "To-Do";
-    
-    const newTask = await createTask(user.id, {
-      title,
-      type: valid,
-      due_at: null,
-      is_active: 1
-    });
-    
-    if (newTask) {
-      setTasks((prev) => Array.isArray(prev) ? [...prev, newTask] : [newTask]);
-    }
+    const next = [
+      ...tasks,
+      { id: crypto.randomUUID(), title, type: valid, dueAt: null, done: false },
+    ];
+    setTasks(next);
   };
 
-  const toggleDone = async (id) => {
-    if (!user || !user.id) return;
-    
-    const task = Array.isArray(tasks) ? tasks.find((t) => t.id === id) : null;
-    if (!task) return;
-    
-    const updated = await updateTask(user.id, id, {
-      title: task.title,
-      type: task.type,
-      due_at: task.due_at,
-      is_active: task.is_active === 1 ? 0 : 1
-    });
-    
-    if (updated) {
-      setTasks((prev) => Array.isArray(prev) ? prev.map((t) => (t.id === id ? updated : t)) : [updated]);
-    }
+  const toggleDone = (id) => {
+    setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, done: !t.done } : t)));
   };
 
-  const editTask = async (id) => {
-    if (!user || !user.id) return;
-    
-    const t = Array.isArray(tasks) ? tasks.find((x) => x.id === id) : null;
+  const editTask = (id) => {
+    const t = tasks.find((x) => x.id === id);
     if (!t) return;
     const title = prompt("Edit title:", t.title) ?? t.title;
     const type = prompt('Edit type (Habit / Daily / To-Do):', t.type) ?? t.type;
     const valid = ["Habit", "Daily", "To-Do"].includes(type) ? type : t.type;
-    
-    const updated = await updateTask(user.id, id, {
-      title,
-      type: valid,
-      due_at: t.due_at,
-      is_active: t.is_active
-    });
-    
-    if (updated) {
-      setTasks((prev) => Array.isArray(prev) ? prev.map((x) => (x.id === id ? updated : x)) : [updated]);
-    }
+    setTasks((prev) => prev.map((x) => (x.id === id ? { ...x, title, type: valid } : x)));
   };
 
-  const removeTask = async (id) => {
-    if (!user || !user.id) return;
-    
+    const removeTask = (id) => {
     if (!window.confirm("Delete this task?")) return;
-    
-    const success = await deleteTask(user.id, id);
-    if (success) {
-      setTasks((prev) => Array.isArray(prev) ? prev.filter((t) => t.id !== id) : []);
-    }
-  };
+    setTasks((prev) => prev.filter((t) => t.id !== id));
+    };
 
 
   const counts = useMemo(() => {
     const c = { Habit: 0, Daily: 0, "To-Do": 0 };
-    if (Array.isArray(tasks)) {
-      tasks.forEach((t) => (c[t.type] += 1));
-    }
+    tasks.forEach((t) => (c[t.type] += 1));
     return c;
   }, [tasks]);
 
@@ -201,10 +91,10 @@ export default function TaskBoard() {
         <Droppable droppableId="task-list">
           {(provided) => (
             <div className="task-list" ref={provided.innerRef} {...provided.droppableProps}>
-              {Array.isArray(tasks) && tasks.map((t, index) => {
+              {tasks.map((t, index) => {
                 const colors = TYPE_COLORS[t.type] || TYPE_COLORS["To-Do"];
                 return (
-                  <Draggable draggableId={String(t.id)} index={index} key={t.id}>
+                  <Draggable draggableId={t.id} index={index} key={t.id}>
                     {(p, snapshot) => (
                       <div
                         ref={p.innerRef}
@@ -228,10 +118,10 @@ export default function TaskBoard() {
                         <label className="check-wrap">
                           <input
                             type="checkbox"
-                            checked={t.is_active === 0}
+                            checked={t.done}
                             onChange={() => toggleDone(t.id)}
                           />
-                          <span className={`title ${t.is_active === 0 ? "done" : ""}`}>{t.title}</span>
+                          <span className={`title ${t.done ? "done" : ""}`}>{t.title}</span>
                           <span className="type-tag">{t.type}</span>
                         </label>
 

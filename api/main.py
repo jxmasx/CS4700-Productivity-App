@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 
 from auth import router as auth_router
-from quests import router as quests_router
+# from quests import router as quests_router
 
 load_dotenv()
 
@@ -26,18 +26,14 @@ def health():
     return {"ok": True}
 
 API.include_router(auth_router)
-API.include_router(quests_router)
+# API.include_router(quests_router)
 
 if __name__ == "__main__":
     import uvicorn
     import traceback
-    import logging
 
-    # Enable logging
-    logging.basicConfig(level=logging.INFO)
-    
     try:
-        uvicorn.run(API, host="0.0.0.0", port=5000, log_level="info")
+        uvicorn.run(API, host="0.0.0.0", port=5000)
     except Exception as e:
         print("\nError occurred:")
         traceback.print_exc()
