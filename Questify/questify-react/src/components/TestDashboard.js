@@ -39,7 +39,7 @@ ChartJS.register(
 );
 
 /*LocalStorage keys*/
-const STORE = "qf_dashboard_state_v1";
+// const STORE = "qf_dashboard_state_v1"; // Replaced with real data
 const INTEGRATIONS_SEEN_KEY = "qf_integrations_seen_v1";
 const QUEST_STATUS_KEY = "questStatus";
 
