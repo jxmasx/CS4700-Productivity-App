@@ -3,7 +3,7 @@ import TaskBoard from "./TaskBoard";
 import "../style.css";
 import CalendarView from "./CalendarView";
 import PomodoroTimer from "./PomodoroTimer";
-import { useUser } from "../contexts/UserContext";
+import QuestifyNavBar from "./QuestifyNavBar";
 
 import {
   Chart as ChartJS,
@@ -18,12 +18,14 @@ import { Radar as RadarChartJS } from "react-chartjs-2";
 
 ChartJS.register(RadialLinearScale, PointElement, LineElement, Filler, Tooltip, Legend);
 
+const STORE = "qf_dashboard_state_v1";
+
 const clone = (obj) =>
   typeof structuredClone === "function" ? structuredClone(obj) : JSON.parse(JSON.stringify(obj));
 
 const DEFAULT = {
   profile: {
-    name: "None",
+    name: "Ash",
     class: "Scholar",
     rank: "Apprentice",
     streak: 1,
@@ -61,7 +63,6 @@ const DEFAULT = {
 export default function Dashboard() {
   const base = process.env.PUBLIC_URL || "";
   const [taskTab, setTaskTab] = useState("list");
-  const { user, isAuthenticated, loading } = useUser();
 
   const USER_INFO = {
     profile: {
@@ -103,8 +104,8 @@ export default function Dashboard() {
   const [state, setState] = useState(DEFAULT);
 
   useEffect(() => {
-    setState(clone(USER_INFO))
-  }, [user, isAuthenticated, loading]);
+    localStorage.setItem(STORE, JSON.stringify(state));
+  }, [state]);
 
   const equipItem = (itemId, slot) => {
     setState((prev) => ({ ...prev, gear: { ...prev.gear, [slot]: itemId } }));
@@ -186,7 +187,7 @@ export default function Dashboard() {
   const slotsOrder = [
     "head", "chest", "arm",
     "weapon1", "weapon2", "extra",
-    "pants", "foot", null,
+    "pants", "foot", null, 
   ];
 
   const radarData = useMemo(() => {
@@ -271,8 +272,8 @@ export default function Dashboard() {
               </div>
             </section>
 
-            {/* Right column: Tasks */}
-            <section className="panel tasks tasks-tall wb-tasks">
+            {/*Right column: Tasks*/}
+           <section className="panel tasks tasks-tall wb-tasks">
               <div className="tabbar header-buttons">
                 <button
                   className={`tab ${taskTab === "list" ? "active" : ""}`}

@@ -59,37 +59,17 @@ async function deleteTask(user_id, task_id) {
   }
 }
 
-const DEFAULT_TASKS = [
-  { title: "Read 10 pages", type: "Habit", due_at: null, is_active: 1 },
-  { title: "AM workout", type: "Daily", due_at: null, is_active: 1 },
-  { title: "Finish dashboard layout", type: "To-Do", due_at: null, is_active: 1 },
-];
-
 export default function TaskBoard() {
   const { user } = useUser();
   const [tasks, setTasks] = useState([]);
 
-  // Load tasks from database on mount, or create default tasks if none exist
+  // Load tasks from database on mount
   useEffect(() => {
     async function fetchTasks() {
       if (user && user.id) {
         try {
           const data = await readTasks(user.id);
-          if (data.length === 0) {
-            const createdTasks = [];
-            for (const defaultTask of DEFAULT_TASKS) {
-              const newTask = await createTask(user.id, defaultTask);
-              if (newTask) {
-                createdTasks.push(newTask);
-              }
-            }
-            
-            if (createdTasks.length > 0) {
-              setTasks(createdTasks);
-            }
-          } else {
-            setTasks(data);
-          }
+          setTasks(data);
         } catch (error) {
           console.error('Error in fetchTasks:', error);
         }

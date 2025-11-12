@@ -71,7 +71,7 @@ export default function IntroScene() {
           boxShadow: "0 8px 20px rgba(0,0,0,0.3)",
         }}
       >
-        Enter the Guild Hall
+        Explore Your Dashboard
       </button>
     </main>
   );
