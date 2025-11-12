@@ -8,6 +8,7 @@
  -----------------------------------------------------------------------------*/
 
 import React, { useEffect, useMemo, useState } from "react";
+import { useUser } from "../contexts/UserContext";
 import "../style.css";
 import TaskBoard from "./TaskBoard";
 import CalendarView from "./CalendarView";
@@ -54,9 +55,10 @@ const clone = (obj) =>
     : JSON.parse(JSON.stringify(obj));
 
 /*Baseline state if nothing is saved yet - WILL NEED TO BE REPLACED*/
+// [JON] I replaced this with a more blank template (should not really be seen)
 const DEFAULT = {
   profile: {
-    name: "Ash",
+    name: "None",
     class: "Scholar",
     rank: "Apprentice",
     streak: 1,
@@ -104,18 +106,20 @@ export default function Dashboard() {
   });
 
   /*Main dashboard state (profile, stats, gear, tasks, etc.)*/
-  const [state, setState] = useState(() => {
-    const saved = localStorage.getItem(STORE);
-    return saved ? JSON.parse(saved) : clone(DEFAULT);
-  });
+  // [JON] Replaced, doesn't need localStorage
+  const [state, setState] = useState(DEFAULT);
 
   /*Controls whether the starter quest popup is visible*/
   const [showStarterQuestPopup, setShowStarterQuestPopup] = useState(false);
 
+  /*Gets user data from UserContext*/
+  const { user, isAuthenticated, loading } = useUser();
+
   /*Persist dashboard state whenever it changes*/
+  // [JON] Sets state to user info on mount
   useEffect(() => {
-    localStorage.setItem(STORE, JSON.stringify(state));
-  }, [state]);
+    setState(clone(USER_INFO))
+  }, [user, isAuthenticated, loading]);
 
   const handleCloseIntegrations = () => {
     localStorage.setItem(INTEGRATIONS_SEEN_KEY, "1");
@@ -144,6 +148,44 @@ export default function Dashboard() {
       return next;
     });
   };
+
+  // [JON] This is the actual user info. Tasks part should be useless, gear/items not working yet
+  const USER_INFO = {
+    profile: {
+      name: user?.display_name ?? "",
+      class: user?.user_class ?? "",
+      rank: user?.guild_rank ?? "",
+      streak: user?.guild_streak ?? 0,
+      level: user?.level ?? 0,
+      xp: user?.xp ?? 0,
+      xpMax: user?.xp_max ?? 100,
+      gold: user?.gold ?? 0,
+      diamonds: user?.diamonds ?? 0,
+    },
+    baseStats: {
+      STR: user?.strength ?? 0,
+      DEX: user?.dexterity ?? 0,
+      STAM: user?.stamina ?? 0,
+      INT: user?.intelligence ?? 0,
+      WIS: user?.wisdom ?? 0,
+      CHARM: user?.charisma ?? 0,
+    },
+    gearSlots: ["head", "chest", "arm", "pants", "foot", "weapon1", "weapon2", "extra"],
+    gear: {},
+    items: [
+      { id: "i1", name: "Bronze Sword", slot: "weapon1", bonus: { STR: 1 }, desc: "Reliable beginner blade." },
+      { id: "i2", name: "Oak Staff", slot: "weapon2", bonus: { INT: 1 }, desc: "Channeling focus for spells." },
+      { id: "i3", name: "Leather Cap", slot: "head", bonus: { STAM: 1 }, desc: "Light protection." },
+      { id: "i4", name: "Scholar Robe", slot: "chest", bonus: { INT: 1, WIS: 1 }, desc: "Robes of learning." },
+      { id: "i5", name: "Boots", slot: "foot", bonus: { DEX: 1 }, desc: "Move with purpose." },
+      { id: "i6", name: "Charm Locket", slot: "extra", bonus: { CHARM: 1 }, desc: "A glimmer of charisma." },
+    ],
+    tasks: [
+      { id: "t1", title: "Write 300 words", type: "task", progress: 0, exp: 40, gold: 20, diamonds: 0 },
+      { id: "t2", title: "Daily Water", type: "habit", progress: 0, exp: 15, gold: 5, diamonds: 0 },
+      { id: "t3", title: "PR for Sprint", type: "task", progress: 0, exp: 30, gold: 15, diamonds: 0 },
+    ],
+  }
 
   const slotLabels = {
     head: "Head Gear",
