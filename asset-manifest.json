@@ -1,13 +1,14 @@
 {
   "files": {
-    "main.css": "/CS4700-Productivity-App/static/css/main.a4b1fa2f.css",
-    "main.js": "/CS4700-Productivity-App/static/js/main.7865cf53.js",
+    "main.css": "/CS4700-Productivity-App/static/css/main.0fbfb4a9.css",
+    "main.js": "/CS4700-Productivity-App/static/js/main.52384622.js",
+    "static/media/guildhall_background.png": "/CS4700-Productivity-App/static/media/guildhall_background.fd80db1b3f03d9cf24fc.png",
     "index.html": "/CS4700-Productivity-App/index.html",
-    "main.a4b1fa2f.css.map": "/CS4700-Productivity-App/static/css/main.a4b1fa2f.css.map",
-    "main.7865cf53.js.map": "/CS4700-Productivity-App/static/js/main.7865cf53.js.map"
+    "main.0fbfb4a9.css.map": "/CS4700-Productivity-App/static/css/main.0fbfb4a9.css.map",
+    "main.52384622.js.map": "/CS4700-Productivity-App/static/js/main.52384622.js.map"
   },
   "entrypoints": [
-    "static/css/main.a4b1fa2f.css",
-    "static/js/main.7865cf53.js"
+    "static/css/main.0fbfb4a9.css",
+    "static/js/main.52384622.js"
   ]
 }
