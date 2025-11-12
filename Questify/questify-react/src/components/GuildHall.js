@@ -2,9 +2,9 @@
  QUESTIFY GUILD HALL & SHOP
   - Displays current gold and inventory
   - Lets player claim pending rewards from habits/quests
-  - Guild Shop with predefined items
-  - Custom reward creator (user-defined treats)
-  - Reads/writes gold, inventory, and pending rewards via localStorage
+  - Creates Guild Shop with predefined items
+  - Creates Custom Reward Creator (The user-defined treats & rewards)
+  - Reads/writes gold, inventory, and pending rewards via localStorage (Will need to be changed to connect to database)
 
  LOCALSTORAGE KEYS (must match QuestCard / other systems)
   - adventurerGold       -> total gold in Guild Hall context
@@ -48,7 +48,7 @@ const DEFAULT_SHOP_ITEMS = [
   },
 ];
 
-/*LocalStorage key names centralized so they’re easy to reuse. WILL HAVE TO BE CHANGED */
+/*LocalStorage key names centralized so they’re easy to reuse. WILL HAVE TO BE CHANGED*/
 const LOCAL_KEYS = {
   GOLD: "adventurerGold",
   INVENTORY: "adventurerInventory",
@@ -58,9 +58,9 @@ const LOCAL_KEYS = {
 const GuildHall = () => {
   const navigate = useNavigate();
 
-  // ---------------------------------------------------------------------------
-  // GOLD STATE
-  // ---------------------------------------------------------------------------
+  /* ---------------------------------------------------------------------------
+   GOLD STATE
+  ---------------------------------------------------------------------------*/
   const [gold, setGold] = useState(0);
 
   /*Loads gold once on mount (fallback starter: 100).*/
@@ -74,9 +74,9 @@ const GuildHall = () => {
     localStorage.setItem(LOCAL_KEYS.GOLD, String(gold));
   }, [gold]);
 
-  // ---------------------------------------------------------------------------
-  // INVENTORY STATE
-  // ---------------------------------------------------------------------------
+  /*---------------------------------------------------------------------------
+   INVENTORY STATE
+  ---------------------------------------------------------------------------*/
   const [inventory, setInventory] = useState([]);
 
   useEffect(() => {
@@ -92,9 +92,9 @@ const GuildHall = () => {
     localStorage.setItem(LOCAL_KEYS.INVENTORY, JSON.stringify(inventory));
   }, [inventory]);
 
-  // ---------------------------------------------------------------------------
-  // PENDING REWARDS STATE
-  // ---------------------------------------------------------------------------
+  /* ---------------------------------------------------------------------------
+   PENDING REWARDS STATE
+  ---------------------------------------------------------------------------*/
   const [pendingRewards, setPendingRewards] = useState([]);
 
   useEffect(() => {
@@ -118,10 +118,10 @@ const GuildHall = () => {
     const reward = pendingRewards.find((r) => r.id === rewardId);
     if (!reward) return;
 
-    /*1)Add gold*/
+    /*1)Adds gold*/
     setGold((prev) => prev + (reward.gold || 0));
 
-    /*2)Logs reward in inventory for flavor*/
+    /*2)Logs reward in inventory for "flavor"*/
     setInventory((items) => [
       ...items,
       {
@@ -132,7 +132,7 @@ const GuildHall = () => {
       },
     ]);
 
-    /*3)Removes from pending */
+    /*3)Removes from pending*/
     savePendingRewards(pendingRewards.filter((r) => r.id !== rewardId));
   };
 
@@ -159,9 +159,9 @@ const GuildHall = () => {
     savePendingRewards([]);
   };
 
-  // ---------------------------------------------------------------------------
-  // SHOP & CUSTOM REWARDS
-  // ---------------------------------------------------------------------------
+  /*---------------------------------------------------------------------------
+   SHOP & CUSTOM REWARDS
+  ---------------------------------------------------------------------------*/
   const [shopItems] = useState(DEFAULT_SHOP_ITEMS);
 
   const canAfford = (cost) => gold >= cost;
@@ -239,7 +239,7 @@ const GuildHall = () => {
       >
 
          {/*Global Navigation Bar – same across all of Questify*/}
-        <QuestifyNavBar />
+            <QuestifyNavBar />
 
         {/*Title band*/}
         <div className="title-band" aria-hidden="true">
@@ -266,7 +266,7 @@ const GuildHall = () => {
           />
         </div>
 
-        {/*TOP ROW */}
+        {/*TOP ROW*/}
         <div
           className="guildhall-summary"
           style={{
@@ -281,6 +281,8 @@ const GuildHall = () => {
             Current Gold: <span style={{ fontWeight: 900 }}>{gold}</span>
           </div>
            
+
+         {/*Ignore This: Button to return to Dashboard | replaced with navigator bar*/}  
          {/* <button
             type="button"
             className="chip"
@@ -689,7 +691,7 @@ const GuildHall = () => {
                   />
                 </label>
 
-                {/* Submit */}
+                {/*Submit Button*/}
                 <button
                   type="submit"
                   className="chip"
@@ -726,7 +728,7 @@ const GuildHall = () => {
                 }}
               >
                 Tip: Use these for IRL rewards that genuinely feel good and are
-                sustainable. You are worth celebrating.
+                sustainable. You are worth celebrating!
               </p>
             </div>
           </section>

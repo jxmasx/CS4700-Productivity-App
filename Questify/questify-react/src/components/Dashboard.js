@@ -238,7 +238,7 @@ export default function Dashboard() {
               </div>
             </section>
 
-            {/* Right column: Tasks */}
+            {/*Right column: Tasks*/}
            <section className="panel tasks tasks-tall wb-tasks">
               <div className="tabbar header-buttons">
                 <button
