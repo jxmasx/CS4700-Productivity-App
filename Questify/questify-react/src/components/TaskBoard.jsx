@@ -1,22 +1,24 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
+import { useUser } from "../contexts/UserContext";
+import { readTasks, createTask, updateTask, deleteTask } from '../utils/Tasks.js'
 
-const STORAGE_KEY = "qf_tasks_v1";
+// const STORAGE_KEY = "qf_tasks_v1";
 const ECON_KEY = "qf_economy_v1";
 
 const TYPE_COLORS = {
-  Habit:   { bg: "#cfe4ff", stripe: "#4b90ff" },
-  Daily:   { bg: "#cfeecf", stripe: "#46a546" },
+  Habit: { bg: "#cfe4ff", stripe: "#4b90ff" },
+  Daily: { bg: "#cfeecf", stripe: "#46a546" },
   "To-Do": { bg: "#ffd6ea", stripe: "#ff5aa5" },
 };
 
 const DIFF_ORDER = ["Trivial", "Easy", "Medium", "Hard", "Epic"];
 const DIFFICULTY = {
-  Trivial: { gold: 2,  xp: 2,  penalty: 1 },
-  Easy:    { gold: 5,  xp: 5,  penalty: 2 },
-  Medium:  { gold: 10, xp: 10, penalty: 5 },
-  Hard:    { gold: 20, xp: 20, penalty: 10 },
-  Epic:    { gold: 35, xp: 35, penalty: 18 },
+  Trivial: { gold: 2, xp: 2, penalty: 1 },
+  Easy: { gold: 5, xp: 5, penalty: 2 },
+  Medium: { gold: 10, xp: 10, penalty: 5 },
+  Hard: { gold: 20, xp: 20, penalty: 10 },
+  Epic: { gold: 35, xp: 35, penalty: 18 },
 };
 
 function todayKey(d = new Date()) {
@@ -27,33 +29,33 @@ function loadEconomy() {
   try {
     const raw = localStorage.getItem(ECON_KEY);
     if (raw) return JSON.parse(raw);
-  } catch {}
-  return { gold: 0, xp: 0, stats: { str: 0, cha: 0, dex: 0, wis: 0, int: 0}, lastRollover: todayKey() };
+  } catch { }
+  return { gold: 0, xp: 0, stats: { str: 0, cha: 0, dex: 0, wis: 0, int: 0 }, lastRollover: todayKey() };
 }
 function saveEconomy(e) {
-  try { localStorage.setItem(ECON_KEY, JSON.stringify(e)); } catch {}
+  try { localStorage.setItem(ECON_KEY, JSON.stringify(e)); } catch { }
 }
 
-function loadTasks() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return JSON.parse(raw);
-  } catch {}
-  return [
-    { id: "t1", title: "Read 10 pages", type: "Habit", dueAt: null, done: false, pomsDone: 0, pomsEstimate: 1, category: "CHA", difficulty: "Easy" },
-    { id: "t2", title: "AM workout", type: "Daily", dueAt: null, done: false, pomsDone: 0, pomsEstimate: 1, category: "STR", difficulty: "Medium" },
-    { id: "t3", title: "Finish dashboard layout", type: "To-Do", dueAt: null, done: false, pomsDone: 0, pomsEstimate: 3, category: "DEX", difficulty: "Hard" },
-  ];
-}
-function saveTasks(tasks) {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks)); } catch {}
-}
+// function loadTasks() {
+//   try {
+//     const raw = localStorage.getItem(STORAGE_KEY);
+//     if (raw) return JSON.parse(raw);
+//   } catch { }
+//   return [
+//     { id: "t1", title: "Read 10 pages", type: "Habit", dueAt: null, done: false, pomsDone: 0, pomsEstimate: 1, category: "CHA", difficulty: "Easy" },
+//     { id: "t2", title: "AM workout", type: "Daily", dueAt: null, done: false, pomsDone: 0, pomsEstimate: 1, category: "STR", difficulty: "Medium" },
+//     { id: "t3", title: "Finish dashboard layout", type: "To-Do", dueAt: null, done: false, pomsDone: 0, pomsEstimate: 3, category: "DEX", difficulty: "Hard" },
+//   ];
+// }
+// function saveTasks(tasks) {
+//   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks)); } catch { }
+// }
 
 function fmtDue(dueAt) {
   if (!dueAt) return "";
   const d = new Date(dueAt);
   const today = new Date();
-  const isOverdue = d.setHours(23,59,59,999) < today.getTime();
+  const isOverdue = d.setHours(23, 59, 59, 999) < today.getTime();
   const label = new Date(dueAt).toLocaleDateString([], { month: "short", day: "numeric" });
   return (isOverdue ? "Overdue · " : "") + label;
 }
@@ -102,7 +104,8 @@ function applyMissPenalty(econ, task) {
 }
 
 export default function TaskBoard() {
-  const [tasks, setTasks] = useState(loadTasks);
+  const { user } = useUser();
+  const [tasks, setTasks] = useState([]);
   const [economy, setEconomy] = useState(loadEconomy);
 
   const [showAdd, setShowAdd] = useState(false);
@@ -118,7 +121,20 @@ export default function TaskBoard() {
   const [showEdit, setShowEdit] = useState(false);
   const [editForm, setEditForm] = useState(null);
 
-  useEffect(() => { saveTasks(tasks); }, [tasks]);
+  // useEffect(() => { saveTasks(tasks); }, [tasks]);
+  useEffect(() => {
+    async function fetchTasks() {
+      if (user && user.id) {
+        try {
+          const data = await readTasks(user.id);
+          setTasks(data);
+        } catch (error) {
+          console.error('Error in fetchTasks:', error);
+        }
+      }
+    }
+    fetchTasks();
+  }, [user]);
   useEffect(() => { saveEconomy(economy); }, [economy]);
 
   useEffect(() => {
@@ -145,7 +161,7 @@ export default function TaskBoard() {
     doRolloverIfNeeded();
     const iv = setInterval(doRolloverIfNeeded, 60 * 1000);
     return () => clearInterval(iv);
-  }, [economy.lastRollover, tasks]); 
+  }, [economy.lastRollover, tasks]);
 
   useEffect(() => {
     const onPomComplete = (e) => {
@@ -192,6 +208,7 @@ export default function TaskBoard() {
       pomsDone: 0,
       pomsEstimate: Math.max(0, parseInt(addForm.pomsEstimate || 0, 10)),
     };
+    createTask(user.id, t)
     setTasks(prev => [...prev, t]);
     setShowAdd(false);
     window.dispatchEvent(new Event("calendar:refresh"));
@@ -210,7 +227,9 @@ export default function TaskBoard() {
         const nowDone = !t.done;
         if (nowDone) econ = applyReward(econ, t);
         else econ = revokeReward(econ, t);
-        return { ...t, done: nowDone };
+        const newData = { ...t, done: nowDone }
+        updateTask(user.id, id, newData)
+        return newData;
       });
       setEconomy(econ);
       return next;
@@ -222,7 +241,7 @@ export default function TaskBoard() {
     if (!t) return;
     setEditForm({
       ...t,
-      dueAtLocal: t.dueAt ? t.dueAt.slice(0,10) : "",
+      dueAtLocal: t.dueAt ? t.dueAt.slice(0, 10) : "",
     });
     setShowEdit(true);
   };
@@ -232,7 +251,7 @@ export default function TaskBoard() {
     setTasks(prev => prev.map(t => {
       if (t.id !== editForm.id) return t;
       const due = editForm.dueAtLocal ? new Date(editForm.dueAtLocal + "T00:00:00") : null;
-      return {
+      const newData = {
         ...t,
         title: editForm.title || "(no title)",
         type: ["Habit", "Daily", "To-Do"].includes(editForm.type) ? editForm.type : t.type,
@@ -240,7 +259,9 @@ export default function TaskBoard() {
         difficulty: DIFF_ORDER.includes(editForm.difficulty) ? editForm.difficulty : t.difficulty,
         pomsEstimate: Math.max(0, parseInt(editForm.pomsEstimate || 0, 10)),
         dueAt: due ? due.toISOString() : null,
-      };
+      }
+      updateTask(user.id, editForm.id, newData)
+      return newData;
     }));
     setShowEdit(false);
     setEditForm(null);
@@ -250,6 +271,7 @@ export default function TaskBoard() {
   const removeTask = (id) => {
     if (!window.confirm("Delete this task?")) return;
     setTasks(prev => prev.filter(t => t.id !== id));
+    deleteTask(user.id, id)
   };
 
   const counts = useMemo(() => {
