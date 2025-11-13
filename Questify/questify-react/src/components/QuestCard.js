@@ -1,5 +1,5 @@
 /* -----------------------------------------------------------------------------
- QUEST CARD (Starter Quest: Complete your first habit)
+ QUEST CARD 
   - Appears near task/habit creation (e.g., Dashboard Task List).
   - Guides user to complete their first habit.
   - On completion, it:
@@ -7,7 +7,7 @@
       * Adds a reward into "pendingRewards" so GuildHall can pay it out.
       * Calls onQuestCompleted (Dashboard can add XP/Gold immediately).
 
- Stores on LOCALSTORAGE:
+ Stores in LOCALSTORAGE: WILL NEED TO BE CHANGED
     - "pendingRewards" -> read by GuildHall
     - "questStatus"    -> map of questId -> { completed, completedAt }
  -----------------------------------------------------------------------------*/
@@ -29,7 +29,7 @@ const QuestCard = ({
   const [showBanner, setShowBanner] = useState(false);
   const [statusMessage, setStatusMessage] = useState("");
 
-  /*Loads quest completion status from localStorage. - Will have to be changed */
+  /*Loads quest completion status from localStorage on mount*/
   useEffect(() => {
     try {
       const raw = localStorage.getItem(QUEST_STATUS_KEY);
@@ -70,12 +70,13 @@ const QuestCard = ({
       const updated = [...existing, newReward];
       localStorage.setItem(PENDING_REWARDS_KEY, JSON.stringify(updated));
     } catch {
-      /*Ignore errors; UI should still shows completion*/
+      /*Ignores errors; UI will still shows completion*/
     }
   };
 
   const handleCheckboxChange = (e) => {
     const checked = e.target.checked;
+    /*Only react to going from unchecked -> checked, and only once.*/
     if (!checked || isCompleted) return;
 
     setIsCompleted(true);
@@ -95,7 +96,14 @@ const QuestCard = ({
     }, 4000);
   };
 
-  if (!visible && !isCompleted) return null;
+  /*
+    VISIBILITY RULES:
+    - If Dashboard says `visible={false}`, doesn’t render at all.
+    - If the quest is already completed, hides the card completely.
+  */
+  if (!visible || isCompleted) {
+    return null;
+  }
 
   return (
     <div
@@ -110,7 +118,7 @@ const QuestCard = ({
         boxShadow: "0 6px 16px rgba(0, 0, 0, 0.25)",
         color: "#3f220e",
         display: "flex",
-        flexDirection: "column",
+        flexDirection: "column-reverse",
         gap: 8,
       }}
     >
@@ -132,23 +140,6 @@ const QuestCard = ({
         >
           {label}
         </h2>
-
-        {isCompleted && (
-          <span
-            style={{
-              padding: "2px 8px",
-              borderRadius: 999,
-              background: "#27ae60",
-              color: "#fff",
-              fontSize: "0.7rem",
-              fontWeight: 700,
-              textTransform: "uppercase",
-              letterSpacing: "0.05em",
-            }}
-          >
-            Completed
-          </span>
-        )}
       </div>
 
       {/*Explanation*/}
@@ -163,7 +154,7 @@ const QuestCard = ({
         system how you finish quests.
       </p>
 
-      {/*UI guide*/}
+      {/*UI Guide*/}
       <div
         style={{
           display: "flex",
@@ -201,7 +192,7 @@ const QuestCard = ({
         </label>
       </div>
 
-      {/*Reward summary*/}
+      {/*Reward Summary*/}
       <div
         style={{
           display: "flex",
@@ -217,12 +208,10 @@ const QuestCard = ({
         <span>
           <strong>Reward:</strong> +{rewardGold} Gold
         </span>
-        <span style={{ opacity: 0.8 }}>
-          (Collectable in the Guild Hall)
-        </span>
+        <span style={{ opacity: 0.8 }}>(Collectable in the Guild Hall)</span>
       </div>
 
-      {/*NPC text line*/}
+      {/*NPC text lines*/}
       <div
         style={{
           marginTop: 8,
@@ -240,7 +229,7 @@ const QuestCard = ({
         </span>
       </div>
 
-      {/*Success banner (Only temporary)*/}
+      {/*Success banner (temporary only)*/}
       {showBanner && (
         <div
           style={{

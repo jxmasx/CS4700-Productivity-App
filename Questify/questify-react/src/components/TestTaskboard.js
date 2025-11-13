@@ -1,17 +1,18 @@
 /*-----------------------------------------------------------------------------
-    Drag-and-drop task board for Habits, Dailies, and To-Dos.
-    Replaces TaskBoard.jsx
+  Drag-and-drop task board for Habits, Dailies, and To-Dos.
 
-    - Uses @hello-pangea/dnd for drag ordering
-    - Saves tasks to localStorage (qf_tasks_v1) - WILL HAVE TO CHANGE FOR BACKEND
-    - Simple prompt-based UI for add/edit
-    - Checkboxes for completion
+  - Uses @hello-pangea/dnd for drag ordering
+  - Saves tasks to localStorage (qf_tasks_v1)  // backend later
+  - Simple prompt-based UI for add/edit
+  - Checkboxes for completion
+  - Calls onFirstTaskGiven() the first time the user adds a task (ever)
 -----------------------------------------------------------------------------*/
 
 import React, { useEffect, useMemo, useState } from "react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 
 const STORAGE_KEY = "qf_tasks_v1";
+const FIRST_TASK_FLAG_KEY = "qf_first_task_given_v1";
 
 const TYPE_COLORS = {
   Habit:   { bg: "#cfe4ff", stripe: "#4b90ff" },
@@ -23,7 +24,10 @@ function loadTasks() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) return JSON.parse(raw);
-  } catch {}
+  } catch {
+    /*Ignores parse errors and falls back to defaults*/
+  }
+  /*Default starting tasks (optional; we can make this [] if we want a blank board instead of giving base quests)*/
   return [
     { id: "t1", title: "Read 10 pages", type: "Habit", dueAt: null, done: false },
     { id: "t2", title: "AM workout", type: "Daily", dueAt: null, done: false },
@@ -32,13 +36,28 @@ function loadTasks() {
 }
 
 function saveTasks(tasks) {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks)); } catch {}
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+  } catch {
+    /*ignores write errors*/
+  }
 }
 
-export default function TaskBoard() {
+export default function TaskBoard({ onFirstTaskGiven }) {
   const [tasks, setTasks] = useState(loadTasks);
 
-  useEffect(() => { saveTasks(tasks); }, [tasks]);
+  //Checks if the "first task" hook has already been triggered (or was ever triggered)?*/
+  const [hasTriggeredFirstTask, setHasTriggeredFirstTask] = useState(() => {
+    try {
+      return localStorage.getItem(FIRST_TASK_FLAG_KEY) === "1";
+    } catch {
+      return false;
+    }
+  });
+
+  useEffect(() => {
+    saveTasks(tasks);
+  }, [tasks]);
 
   const onDragEnd = (result) => {
     if (!result.destination) return;
@@ -51,28 +70,61 @@ export default function TaskBoard() {
   const addTask = () => {
     const title = prompt("Task title:");
     if (!title) return;
-    const type = prompt('Type? Enter "Habit", "Daily" or "To-Do":', "To-Do");
-    const norm = (type || "").trim();
+
+    const typeInput = prompt('Type? Enter "Habit", "Daily" or "To-Do":', "To-Do");
+    const norm = (typeInput || "").trim();
     const valid = ["Habit", "Daily", "To-Do"].includes(norm) ? norm : "To-Do";
-    const next = [
-      ...tasks,
-      { id: crypto.randomUUID(), title, type: valid, dueAt: null, done: false },
-    ];
-    setTasks(next);
+
+    const newTask = {
+      id: crypto.randomUUID(),
+      title,
+      type: valid,
+      dueAt: null,
+      done: false,
+    };
+
+    setTasks((prev) => {
+      const next = [...prev, newTask];
+
+      /*Fires the hook exactly once in this profile's lifetime*/
+      if (!hasTriggeredFirstTask && typeof onFirstTaskGiven === "function") {
+        onFirstTaskGiven();
+        setHasTriggeredFirstTask(true);
+        try {
+          localStorage.setItem(FIRST_TASK_FLAG_KEY, "1");
+        } catch {
+          /*ignores*/
+        }
+      }
+
+      return next;
+    });
   };
 
   const toggleDone = (id) => {
-    setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, done: !t.done } : t)));
+    setTasks((prev) =>
+      prev.map((t) => (t.id === id ? { ...t, done: !t.done } : t))
+    );
   };
 
   const editTask = (id) => {
     const t = tasks.find((x) => x.id === id);
     if (!t) return;
-    const title = prompt("Edit title:", t.title) ?? t.title;
+
+    const titleInput = prompt("Edit title:", t.title);
+    const title =
+      titleInput != null && titleInput.trim() !== "" ? titleInput : t.title;
+
     const typeInput = prompt('Edit type (Habit / Daily / To-Do):', t.type);
     const validTypes = ["Habit", "Daily", "To-Do"];
-    const safeType = typeInput && validTypes.includes(typeInput) ? typeInput : t.type;
-    setTasks((prev) => prev.map((x) => (x.id === id ? { ...x, title, type: safeType } : x)));
+    const safeType =
+      typeInput && validTypes.includes(typeInput) ? typeInput : t.type;
+
+    setTasks((prev) =>
+      prev.map((x) =>
+        x.id === id ? { ...x, title, type: safeType } : x
+      )
+    );
   };
 
   const removeTask = (id) => {
@@ -82,25 +134,37 @@ export default function TaskBoard() {
 
   const counts = useMemo(() => {
     const c = { Habit: 0, Daily: 0, "To-Do": 0 };
-    tasks.forEach((t) => { if (c[t.type] != null) c[t.type] += 1; });
+    tasks.forEach((t) => {
+      if (c[t.type] != null) c[t.type] += 1;
+    });
     return c;
   }, [tasks]);
 
   return (
     <div>
-      {/*header actions*/}
+      {/*Header Actions*/}
       <div className="taskbar">
         <div className="pill">Habits: {counts.Habit}</div>
         <div className="pill">Dailies: {counts.Daily}</div>
         <div className="pill">To-Dos: {counts["To-Do"]}</div>
         <div className="tab-spacer" />
-        <button className="tab action" onClick={addTask} title="Add Task">+</button>
+        <button
+          className="tab action"
+          onClick={addTask}
+          title="Add Task"
+        >
+          +
+        </button>
       </div>
 
       <DragDropContext onDragEnd={onDragEnd}>
         <Droppable droppableId="task-list">
           {(provided) => (
-            <div className="task-list" ref={provided.innerRef} {...provided.droppableProps}>
+            <div
+              className="task-list"
+              ref={provided.innerRef}
+              {...provided.droppableProps}
+            >
               {tasks.map((t, index) => {
                 const colors = TYPE_COLORS[t.type] || TYPE_COLORS["To-Do"];
                 return (
@@ -109,7 +173,9 @@ export default function TaskBoard() {
                       <div
                         ref={p.innerRef}
                         {...p.draggableProps}
-                        className={`task task-row ${snapshot.isDragging ? "dragging" : ""}`}
+                        className={`task task-row ${
+                          snapshot.isDragging ? "dragging" : ""
+                        }`}
                         style={{
                           ...p.draggableProps.style,
                           background: colors.bg,
@@ -131,13 +197,25 @@ export default function TaskBoard() {
                             checked={t.done}
                             onChange={() => toggleDone(t.id)}
                           />
-                          <span className={`title ${t.done ? "done" : ""}`}>{t.title}</span>
+                          <span className={`title ${t.done ? "done" : ""}`}>
+                            {t.title}
+                          </span>
                           <span className="type-tag">{t.type}</span>
                         </label>
 
                         <div className="task-row-actions">
-                          <button onClick={() => editTask(t.id)} aria-label="Edit">✎</button>
-                          <button onClick={() => removeTask(t.id)} aria-label="Delete">🗑</button>
+                          <button
+                            onClick={() => editTask(t.id)}
+                            aria-label="Edit"
+                          >
+                            ✎
+                          </button>
+                          <button
+                            onClick={() => removeTask(t.id)}
+                            aria-label="Delete"
+                          >
+                            🗑
+                          </button>
                         </div>
                       </div>
                     )}

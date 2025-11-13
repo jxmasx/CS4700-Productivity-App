@@ -14,11 +14,21 @@ export default function Signup() {
   async function readUsers() {
     try {
       const response = await fetch('https://questify.duckdns.org/api/users');
+      
+      if (response.status === 404) {
+        return [];
+      }
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch users');
+      }
+      
       const data = await response.json();
-      return data
+      return data;
 
     } catch (error) {
-      alert('Error: ' + error);
+      console.error('Error fetching users:', error);
+      return [];
     }
   }
 

@@ -389,5 +389,44 @@ grid-template-areas:
 "inventory"
 "tasks";
 height: auto;
+  }
+
+ /*CSS Styling for the QuestCard*/
+.questcard-panel {
+  margin-bottom: 1.5rem;
+  padding: 1rem 1.25rem;
+  border-radius: 0.75rem;
+  background: rgba(0, 0, 0, 0.15);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
 }
+
+.questcard-panel > * {
+  width: 100%;
 }
+
+.quest-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999; /*Layers backdrop above wood and other panels*/
+}
+
+.quest-modal {
+  max-width: 480px;
+  width: min(90vw, 480px);
+}
+
+.quest-modal-close {
+  margin-top: 0.75rem;
+  padding: 0.4rem 0.8rem;
+  border-radius: 999px;
+  border: 1px solid #8b5e34;
+  background: #f7e8cf;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+} /*Final Bracket - Don't delete*/ 
