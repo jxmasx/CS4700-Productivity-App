@@ -44,7 +44,7 @@ export function UserProvider({ children }) {
     if (!userId) return null;
 
     try {
-      const response = await fetch(`https://questify.duckdns.org/api/users/${userId}`);
+      const response = await fetch(`http://127.0.0.1:5000/api/users/${userId}`);
       if (response.ok) {
         const userData = await response.json();
         updateUser(userData);
@@ -64,7 +64,7 @@ export function UserProvider({ children }) {
     if (!user?.id) return;
 
     try {
-      const response = await fetch(`https://questify.duckdns.org/api/users/${user.id}`);
+      const response = await fetch(`http://127.0.0.1:5000/api/users/${user.id}`);
       if (response.ok) {
         const userData = await response.json();
         updateUser(userData);

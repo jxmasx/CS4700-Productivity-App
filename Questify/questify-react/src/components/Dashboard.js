@@ -3,6 +3,9 @@ import TaskBoard from "./TaskBoard";
 import "../style.css";
 import CalendarView from "./CalendarView";
 import PomodoroTimer from "./PomodoroTimer";
+import ConnectCalendarModal from "./ConnectCalendarModal";
+import TopNav from "./TopNav";
+import { API } from "../apiBase";
 
 import {
   Chart as ChartJS,
@@ -62,6 +65,7 @@ const DEFAULT = {
 export default function Dashboard() {
   const base = process.env.PUBLIC_URL || "";
   const [taskTab, setTaskTab] = useState("list");
+  const [showCalModal, setShowCalModal] = useState(false);
 
   const [state, setState] = useState(() => {
     const saved = localStorage.getItem(STORE);
@@ -71,6 +75,44 @@ export default function Dashboard() {
   useEffect(() => {
     localStorage.setItem(STORE, JSON.stringify(state));
   }, [state]);
+
+  useEffect(() => {
+    const onEconomy = () => {
+      try {
+        const saved = localStorage.getItem(STORE);
+        if (saved) {
+          const latest = JSON.parse(saved);
+          setState((prev) => ({ ...prev, profile: { ...prev.profile, ...latest.profile } }));
+        }
+      } catch {}
+    };
+    window.addEventListener("economy:changed", onEconomy);
+    return () => window.removeEventListener("economy:changed", onEconomy);
+  }, []);
+
+  // calendar connect prompt
+  useEffect(() => {
+    const check = async () => {
+      if (taskTab !== "calendar") return;
+      try {
+        const r = await fetch(API(`/oauth/status?user_id=1`), { credentials: "include" });
+        if (!r.ok) throw new Error();
+        const data = await r.json();
+        if (!data.connected) setShowCalModal(true);
+      } catch {
+        setShowCalModal(true);
+      }
+    };
+    check();
+  }, [taskTab]);
+
+  const onCalendarConnected = async () => {
+    try {
+      await fetch(API(`/calendar/sync`), { method: "POST", credentials: "include" });
+    } catch {}
+    window.dispatchEvent(new CustomEvent("calendar:refresh"));
+    setShowCalModal(false);
+  };
 
   const equipItem = (itemId, slot) => {
     setState((prev) => ({ ...prev, gear: { ...prev.gear, [slot]: itemId } }));
@@ -152,7 +194,7 @@ export default function Dashboard() {
   const slotsOrder = [
     "head", "chest", "arm",
     "weapon1", "weapon2", "extra",
-    "pants", "foot", null, 
+    "pants", "foot", null,
   ];
 
   const radarData = useMemo(() => {
@@ -193,12 +235,20 @@ export default function Dashboard() {
 
   return (
     <div className="wrap">
+      <TopNav
+        gold={state.profile.gold}
+        diamonds={state.profile.diamonds}
+        onAvatar={() => window.dispatchEvent(new CustomEvent("nav:go", { detail: { to: "avatar" } }))}
+        onGuild={() => window.dispatchEvent(new CustomEvent("nav:go", { detail: { to: "guild" } }))}
+        onConnect={() => window.dispatchEvent(new CustomEvent("nav:go", { detail: { to: "connect" } }))}
+        onSettings={() => window.dispatchEvent(new CustomEvent("nav:go", { detail: { to: "settings" } }))}
+      />
+
       <div className="wood">
         <div className="title-band"></div>
 
-        <div className="dashboard-root">
+        <div className="dashboard-root container-1200">
           <div className="app-container wb-layout">
-            {/* Left column: Avatar + info */}
             <section className="panel avatar-panel">
               <h2>{state.profile.name}</h2>
               <div className="avatar-box">
@@ -212,14 +262,13 @@ export default function Dashboard() {
               <div className="info-stack">
                 <div style={{ marginTop: 15 }}></div>
                 <div><strong>Class:</strong> {state.profile.class}</div>
-                <strong>Level:</strong> {state.profile.level}
+                <div><strong>Level:</strong> {state.profile.level}</div>
                 <div><strong>Guild Rank:</strong> {state.profile.rank}</div>
                 <div><strong>Guild Streak:</strong> {state.profile.streak}</div>
                 <div><strong>EXP:</strong> {state.profile.xp} / {state.profile.xpMax}</div>
               </div>
             </section>
 
-            {/* Left column: Radar */}
             <section className="panel radar-panel">
               <h2>Character Stats</h2>
               <div className="radar-wrap">
@@ -227,18 +276,7 @@ export default function Dashboard() {
               </div>
             </section>
 
-            {/* Left column: Inventory */}
-            <section className="panel inventory">
-              <h2>Inventory</h2>
-              <div className="inventory-grid wb-three">
-                {slotsOrder.map((slot, i) =>
-                  slot ? renderSlot(slot) : <div className="slot" key={`empty-${i}`} />
-                )}
-              </div>
-            </section>
-
-            {/* Right column: Tasks */}
-           <section className="panel tasks tasks-tall wb-tasks">
+            <section className="panel tasks tasks-tall wb-tasks">
               <div className="tabbar header-buttons">
                 <button
                   className={`tab ${taskTab === "list" ? "active" : ""}`}
@@ -258,11 +296,39 @@ export default function Dashboard() {
                 >
                   Pomodoro
                 </button>
+                <button
+                  className={`tab ${taskTab === "inventory" ? "active" : ""}`}
+                  onClick={() => setTaskTab("inventory")}
+                >
+                  Inventory
+                </button>
               </div>
 
               {taskTab === "list" && <TaskBoard />}
-              {taskTab === "calendar" && <CalendarView />}
+
+              {taskTab === "calendar" && (
+                <>
+                  {showCalModal && (
+                    <ConnectCalendarModal
+                      onConnected={onCalendarConnected}
+                      onClose={() => setShowCalModal(false)}
+                    />
+                  )}
+                  <CalendarView />
+                </>
+              )}
+
               {taskTab === "pomodoro" && <PomodoroTimer />}
+
+              {taskTab === "inventory" && (
+                <div className="inventory-tab">
+                  <div className="inventory-grid wb-three">
+                    {slotsOrder.map((slot, i) =>
+                      slot ? renderSlot(slot) : <div className="slot" key={`empty-${i}`} />
+                    )}
+                  </div>
+                </div>
+              )}
             </section>
           </div>
         </div>

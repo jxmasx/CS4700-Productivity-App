@@ -8,6 +8,8 @@ from sqlalchemy import Column, Integer, String, BLOB
 from sqlalchemy.orm import Session
 import logging
 
+from tasks import TaskItem
+
 router = APIRouter(prefix="/api", tags=["auth"])
 
 logger = logging.getLogger(__name__)
@@ -20,11 +22,19 @@ class UserItem(Base):
     created_at = Column(String, nullable=False, default=lambda: datetime.now().isoformat())
     level = Column(Integer, nullable=False, default=1)
     xp = Column(Integer, nullable=False, default=0)
+    xp_max = Column(Integer, nullable=False, default=100)
     hp = Column(Integer, nullable=False, default=100)
     mana = Column(Integer, nullable=False, default=50)
     gold = Column(Integer, nullable=False, default=0)
     diamonds = Column(Integer, nullable=False, default=0)
     guild_rank = Column(String, nullable=False, default='Bronze')
+    guild_streak = Column(Integer, nullable=False, default=0)
+    strength = Column(Integer, nullable=False, default=0)
+    dexterity = Column(Integer, nullable=False, default=0)
+    intelligence = Column(Integer, nullable=False, default=0)
+    wisdom = Column(Integer, nullable=False, default=0)
+    charisma = Column(Integer, nullable=False, default=0)
+    user_class = Column(String, nullable=False, default='Bronze')
 
 class PassItem(Base):
     __tablename__ = "user_passwords"
@@ -52,11 +62,19 @@ class UserFullOut(BaseModel):
     created_at: str
     level: int
     xp: int
+    xp_max: int
     hp: int
     mana: int
     gold: int
     diamonds: int
     guild_rank: str
+    guild_streak: int
+    strength: int
+    dexterity: int
+    intelligence: int
+    wisdom: int
+    charisma: int
+    user_class: str
     
     class Config:
         from_attributes = True
@@ -78,9 +96,6 @@ async def read_items(db: Session = Depends(get_db)):
 # Signup with email, display_name, and password
 @router.post("/signup", response_model=UserOut)
 async def create_item(item: SignupIn, db: Session = Depends(get_db)):
-    user_data = {"email": item.email, "display_name": item.display_name}
-    db_item = UserItem(**user_data)
-
     pass_hash = bcrypt.hashpw(item.password.encode(), bcrypt.gensalt())
 
     try:
@@ -93,6 +108,14 @@ async def create_item(item: SignupIn, db: Session = Depends(get_db)):
 
         pass_item = PassItem(user_id=db_item.id, pass_hash=pass_hash)
         db.add(pass_item)
+        
+        default_tasks = [
+            TaskItem(user_id=db_item.id, title="Read 10 pages", type="Habit", due_at=None, is_active=1),
+            TaskItem(user_id=db_item.id, title="AM workout", type="Daily", due_at=None, is_active=1),
+            TaskItem(user_id=db_item.id, title="Finish dashboard layout", type="To-Do", due_at=None, is_active=1),
+        ]
+        for task in default_tasks:
+            db.add(task)
         
         db.commit()
         db.refresh(db_item)

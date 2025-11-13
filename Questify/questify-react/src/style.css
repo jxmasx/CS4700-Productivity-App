@@ -378,6 +378,200 @@ padding-bottom: 10px;
   margin-top: 80px;
 }
 
+/* ---- Pomodoro ---- */
+/* Pomodoro Layout */
+.pomo-wrap {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 16px;
+  background: transparent; /* removes outer blue area */
+}
+
+/* Inner timer card stays blue and transitions between modes */
+.pomo-card {
+  --bg1: #74b9ff;
+  --bg2: #1e6dd8;
+  background: linear-gradient(180deg, var(--bg1) 0%, var(--bg2) 100%);
+  transition: background 400ms ease, box-shadow 200ms ease, transform 120ms ease;
+  border-radius: 22px;
+  padding: 28px 24px 20px;
+  border: 3px solid #000;
+  box-shadow: 6px 6px 0 rgba(0,0,0,.35);
+  color: #fff;
+  text-align: center;
+  max-width: 720px;
+  width: 100%;
+}
+
+/* Smooth color transitions by mode */
+.pomo-card.mode-focus {
+  --bg1: #74b9ff;
+  --bg2: #1e6dd8;
+}
+.pomo-card.mode-short {
+  --bg1: #a4e4f7;
+  --bg2: #4fc3f7;
+}
+.pomo-card.mode-long {
+  --bg1: #b3e5fc;
+  --bg2: #64b5f6;
+}
+
+/* Tabs (Pomodoro / Short / Long) */
+.pomo-tabs {
+  display: flex;
+  gap: 14px;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+.pomo-tab {
+  border: 3px solid #2d1b0e;
+  background: rgba(255, 255, 255, 0.2);
+  color: #2d1b0e;
+  font-weight: 800;
+  letter-spacing: 0.2px;
+  padding: 8px 16px;
+  border-radius: 14px;
+  box-shadow: 3px 3px 0 rgba(45, 27, 14, 0.6);
+  cursor: pointer;
+}
+.pomo-tab.active {
+  background: linear-gradient(180deg, #f2c988 0%, #e9b76d 100%);
+  color: #2d1b0e;
+}
+
+/* Timer text */
+.pomo-timer {
+  font-size: clamp(72px, 14vw, 150px);
+  line-height: 1;
+  font-weight: 900;
+  margin: 16px 0 18px;
+  text-shadow: 0 6px 0 rgba(0, 0, 0, 0.25);
+}
+
+/* Buttons */
+.pomo-actions {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+.pomo-btn-primary,
+.pomo-btn-ghost {
+  border: 3px solid #2d1b0e;
+  border-radius: 16px;
+  box-shadow: 3px 3px 0 rgba(45, 27, 14, 0.6);
+  font-weight: 900;
+  font-size: 20px;
+}
+.pomo-btn-primary {
+  padding: 14px 34px;
+  background: #fff;
+  color: #2d1b0e;
+}
+.pomo-btn-primary:active {
+  transform: translate(1px, 1px);
+  box-shadow: 2px 2px 0 rgba(45, 27, 14, 0.6);
+}
+.pomo-btn-ghost {
+  padding: 12px 22px;
+  background: transparent;
+  color: #2d1b0e;
+}
+
+/* Subtext */
+.pomo-subtext {
+  margin-top: 12px;
+  opacity: 0.95;
+}
+.pomo-round {
+  font-weight: 800;
+  margin-bottom: 4px;
+}
+.pomo-status {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+/* ===== TopNav ===== */
+.qn-nav {
+  position: sticky;
+  top: 0;
+  z-index: 60;
+  background: linear-gradient(180deg, #f6e7c6 0%, #ead6ac 100%); /* parchment */
+  border-bottom: 2px solid #2b1a0e;
+  box-shadow: 0 4px 0 rgba(43, 26, 14, 0.18);
+}
+.qn-nav__inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 10px 16px;
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 16px;
+  align-items: center;
+}
+
+.qn-brand {
+  min-height: 28px;
+  display: flex;
+  align-items: center;
+  font-weight: 900;
+  font-size: 20px;
+  color: #2b1a0e;
+}
+
+.qn-links {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.qn-link {
+  appearance: none;
+  border: 2px solid #2b1a0e;
+  background: #fff;
+  color: #2b1a0e;
+  border-radius: 10px;
+  padding: 7px 12px;
+  font-weight: 800;
+  line-height: 1;
+  box-shadow: 2px 2px 0 rgba(43, 26, 14, 0.25);
+  transition: transform 120ms ease, box-shadow 120ms ease, background 160ms ease;
+}
+.qn-link:hover { background: #fffaf0; }
+.qn-link:active { transform: translate(1px,1px); box-shadow: 1px 1px 0 rgba(43,26,14,.25); }
+
+.qn-econ {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  align-items: center;
+}
+.qn-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border: 2px solid #2b1a0e;
+  border-radius: 999px;
+  background: #fff;
+  color: #2b1a0e;
+  box-shadow: 2px 2px 0 rgba(43,26,14,.25);
+}
+.qn-chip--accent { background: #f8fbff; }
+.qn-chip__label { font-weight: 700; opacity: .85; }
+.qn-chip__val { font-weight: 900; }
+
+@media (max-width: 860px) {
+  .qn-nav__inner {
+    grid-template-columns: 1fr auto;
+    grid-template-rows: auto auto;
+  }
+  .qn-links { grid-column: 1 / -1; order: 3; justify-content: flex-start; }
+  .qn-econ { justify-content: flex-end; }
+}
 
 @media (max-width: 1100px) {
 .dashboard-root .app-container.wb-layout {
