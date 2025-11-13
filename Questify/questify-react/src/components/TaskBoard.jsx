@@ -1,34 +1,82 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
-
-const STORAGE_KEY = "qf_tasks_v1";
+import { useUser } from "../contexts/UserContext";
 
 const TYPE_COLORS = {
-  Habit:   { bg: "#cfe4ff", stripe: "#4b90ff" },
-  Daily:   { bg: "#cfeecf", stripe: "#46a546" },
+  Habit: { bg: "#cfe4ff", stripe: "#4b90ff" },
+  Daily: { bg: "#cfeecf", stripe: "#46a546" },
   "To-Do": { bg: "#ffd6ea", stripe: "#ff5aa5" },
 };
 
-function loadTasks() {
+async function readTasks(user_id) {
+    try {
+      const response = await fetch(`https://questify.duckdns.org/api/users/${user_id}/tasks`);
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Error reading tasks:', error);
+      return [];
+    }
+  }
+
+async function createTask(user_id, taskData) {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return JSON.parse(raw);
-  } catch {}
-  return [
-    { id: "t1", title: "Read 10 pages", type: "Habit", dueAt: null, done: false },
-    { id: "t2", title: "AM workout", type: "Daily", dueAt: null, done: false },
-    { id: "t3", title: "Finish dashboard layout", type: "To-Do", dueAt: null, done: false },
-  ];
+    const response = await fetch(`https://questify.duckdns.org/api/users/${user_id}/tasks`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(taskData)
+    });
+    return await response.json();
+  } catch (error) {
+    console.error('Error creating task:', error);
+    return null;
+  }
 }
 
-function saveTasks(tasks) {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks)); } catch {}
+async function updateTask(user_id, task_id, taskData) {
+  try {
+    const response = await fetch(`https://questify.duckdns.org/api/users/${user_id}/tasks/${task_id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(taskData)
+    });
+    return await response.json();
+  } catch (error) {
+    console.error('Error updating task:', error);
+    return null;
+  }
+}
+
+async function deleteTask(user_id, task_id) {
+  try {
+    await fetch(`https://questify.duckdns.org/api/users/${user_id}/tasks/${task_id}`, {
+      method: 'DELETE'
+    });
+    return true;
+  } catch (error) {
+    console.error('Error deleting task:', error);
+    return false;
+  }
 }
 
 export default function TaskBoard() {
-  const [tasks, setTasks] = useState(loadTasks);
+  const { user } = useUser();
+  const [tasks, setTasks] = useState([]);
 
-  useEffect(() => { saveTasks(tasks); }, [tasks]);
+  // Load tasks from database on mount
+  useEffect(() => {
+    async function fetchTasks() {
+      if (user && user.id) {
+        try {
+          const data = await readTasks(user.id);
+          setTasks(data);
+        } catch (error) {
+          console.error('Error in fetchTasks:', error);
+        }
+      }
+    }
+    fetchTasks();
+  }, [user]);
 
   const onDragEnd = (result) => {
     if (!result.destination) return;
@@ -38,41 +86,83 @@ export default function TaskBoard() {
     setTasks(next);
   };
 
-  const addTask = () => {
+  const addTask = async () => {
+    if (!user || !user.id) return;
+    
     const title = prompt("Task title:");
     if (!title) return;
     const type = prompt('Type? Enter "Habit", "Daily" or "To-Do":', "To-Do");
     const norm = (type || "").trim();
     const valid = ["Habit", "Daily", "To-Do"].includes(norm) ? norm : "To-Do";
-    const next = [
-      ...tasks,
-      { id: crypto.randomUUID(), title, type: valid, dueAt: null, done: false },
-    ];
-    setTasks(next);
+    
+    const newTask = await createTask(user.id, {
+      title,
+      type: valid,
+      due_at: null,
+      is_active: 1
+    });
+    
+    if (newTask) {
+      setTasks((prev) => Array.isArray(prev) ? [...prev, newTask] : [newTask]);
+    }
   };
 
-  const toggleDone = (id) => {
-    setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, done: !t.done } : t)));
+  const toggleDone = async (id) => {
+    if (!user || !user.id) return;
+    
+    const task = Array.isArray(tasks) ? tasks.find((t) => t.id === id) : null;
+    if (!task) return;
+    
+    const updated = await updateTask(user.id, id, {
+      title: task.title,
+      type: task.type,
+      due_at: task.due_at,
+      is_active: task.is_active === 1 ? 0 : 1
+    });
+    
+    if (updated) {
+      setTasks((prev) => Array.isArray(prev) ? prev.map((t) => (t.id === id ? updated : t)) : [updated]);
+    }
   };
 
-  const editTask = (id) => {
-    const t = tasks.find((x) => x.id === id);
+  const editTask = async (id) => {
+    if (!user || !user.id) return;
+    
+    const t = Array.isArray(tasks) ? tasks.find((x) => x.id === id) : null;
     if (!t) return;
     const title = prompt("Edit title:", t.title) ?? t.title;
     const type = prompt('Edit type (Habit / Daily / To-Do):', t.type) ?? t.type;
     const valid = ["Habit", "Daily", "To-Do"].includes(type) ? type : t.type;
-    setTasks((prev) => prev.map((x) => (x.id === id ? { ...x, title, type: valid } : x)));
+    
+    const updated = await updateTask(user.id, id, {
+      title,
+      type: valid,
+      due_at: t.due_at,
+      is_active: t.is_active
+    });
+    
+    if (updated) {
+      setTasks((prev) => Array.isArray(prev) ? prev.map((x) => (x.id === id ? updated : x)) : [updated]);
+    }
   };
 
-    const removeTask = (id) => {
+  const removeTask = async (id) => {
+    if (!user || !user.id) return;
+    
     if (!window.confirm("Delete this task?")) return;
-    setTasks((prev) => prev.filter((t) => t.id !== id));
-    };
+    
+    const success = await deleteTask(user.id, id);
+    if (success) {
+      setTasks((prev) => Array.isArray(prev) ? prev.filter((t) => t.id !== id) : []);
+    }
+  };
 
 
   const counts = useMemo(() => {
     const c = { Habit: 0, Daily: 0, "To-Do": 0 };
-    tasks.forEach((t) => (c[t.type] += 1));
+    if (Array.isArray(tasks)) {
+      tasks.forEach((t) => (c[t.type] += 1));
+    }
     return c;
   }, [tasks]);
 
@@ -91,10 +181,10 @@ export default function TaskBoard() {
         <Droppable droppableId="task-list">
           {(provided) => (
             <div className="task-list" ref={provided.innerRef} {...provided.droppableProps}>
-              {tasks.map((t, index) => {
+              {Array.isArray(tasks) && tasks.map((t, index) => {
                 const colors = TYPE_COLORS[t.type] || TYPE_COLORS["To-Do"];
                 return (
-                  <Draggable draggableId={t.id} index={index} key={t.id}>
+                  <Draggable draggableId={String(t.id)} index={index} key={t.id}>
                     {(p, snapshot) => (
                       <div
                         ref={p.innerRef}
@@ -118,10 +208,10 @@ export default function TaskBoard() {
                         <label className="check-wrap">
                           <input
                             type="checkbox"
-                            checked={t.done}
+                            checked={t.is_active === 0}
                             onChange={() => toggleDone(t.id)}
                           />
-                          <span className={`title ${t.done ? "done" : ""}`}>{t.title}</span>
+                          <span className={`title ${t.is_active === 0 ? "done" : ""}`}>{t.title}</span>
                           <span className="type-tag">{t.type}</span>
                         </label>
 

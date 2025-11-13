@@ -64,10 +64,44 @@ export default function Dashboard() {
   const base = process.env.PUBLIC_URL || "";
   const [taskTab, setTaskTab] = useState("list");
 
-  const [state, setState] = useState(() => {
-    const saved = localStorage.getItem(STORE);
-    return saved ? JSON.parse(saved) : clone(DEFAULT);
-  });
+  const USER_INFO = {
+    profile: {
+      name: user?.display_name || "",
+      class: user?.class || "",
+      rank: user?.guild_rank || "",
+      streak: user?.guild_streak || 0,
+      level: user?.level || 0,
+      xp: user?.xp || 0,
+      xpMax: user?.xpMax || 100,
+      gold: user?.gold || 0,
+      diamonds: user?.diamonds || 0,
+    },
+    baseStats: {
+      STR: user?.strength || 5,
+      DEX: user?.dexterity || 5,
+      STAM: user?.stamina || 5,
+      INT: user?.intelligence || 5,
+      WIS: user?.wisdom || 5,
+      CHARM: user?.charisma || 5,
+    },
+    gearSlots: ["head", "chest", "arm", "pants", "foot", "weapon1", "weapon2", "extra"],
+    gear: {},
+    items: [
+      { id: "i1", name: "Bronze Sword", slot: "weapon1", bonus: { STR: 1 }, desc: "Reliable beginner blade." },
+      { id: "i2", name: "Oak Staff", slot: "weapon2", bonus: { INT: 1 }, desc: "Channeling focus for spells." },
+      { id: "i3", name: "Leather Cap", slot: "head", bonus: { STAM: 1 }, desc: "Light protection." },
+      { id: "i4", name: "Scholar Robe", slot: "chest", bonus: { INT: 1, WIS: 1 }, desc: "Robes of learning." },
+      { id: "i5", name: "Boots", slot: "foot", bonus: { DEX: 1 }, desc: "Move with purpose." },
+      { id: "i6", name: "Charm Locket", slot: "extra", bonus: { CHARM: 1 }, desc: "A glimmer of charisma." },
+    ],
+    tasks: [
+      { id: "t1", title: "Write 300 words", type: "task", progress: 0, exp: 40, gold: 20, diamonds: 0 },
+      { id: "t2", title: "Daily Water", type: "habit", progress: 0, exp: 15, gold: 5, diamonds: 0 },
+      { id: "t3", title: "PR for Sprint", type: "task", progress: 0, exp: 30, gold: 15, diamonds: 0 },
+    ],
+  }
+
+  const [state, setState] = useState(DEFAULT);
 
   useEffect(() => {
     localStorage.setItem(STORE, JSON.stringify(state));
