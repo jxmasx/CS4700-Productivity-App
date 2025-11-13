@@ -1,14 +1,3 @@
-export async function readTasks(user_id) {
-    try {
-      const response = await fetch(`https://questify.duckdns.org/api/users/${user_id}/tasks`);
-      const data = await response.json();
-      return data;
-    } catch (error) {
-      console.error('Error reading tasks:', error);
-      return [];
-    }
-  }
-
 export async function createTask(user_id, taskData) {
   try {
     const response = await fetch(`https://questify.duckdns.org/api/users/${user_id}/tasks`, {
@@ -22,6 +11,17 @@ export async function createTask(user_id, taskData) {
     return null;
   }
 }
+
+export async function readTasks(user_id) {
+    try {
+      const response = await fetch(`https://questify.duckdns.org/api/users/${user_id}/tasks`);
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Error reading tasks:', error);
+      return [];
+    }
+  }
 
 export async function updateTask(user_id, task_id, taskData) {
   try {

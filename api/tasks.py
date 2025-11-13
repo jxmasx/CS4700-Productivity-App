@@ -9,18 +9,27 @@ router = APIRouter(prefix="/api", tags=["tasks"])
 
 class TaskItem(Base):
     __tablename__ = "tasks"
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(String, primary_key=True, index=True)
     user_id = Column(Integer)
     title = Column(String)
     type = Column(String)
+    category = Column(String)
+    difficulty = Column(String)
     due_at = Column(String)
-    is_active = Column(Integer)
+    done = Column(Integer)
+    poms_done = Column(Integer)
+    poms_estimate = Column(Integer)
 
 class TaskIn(BaseModel):
+    id: str
     title: str
     type: str = "todo"         # 'habit' | 'daily' | 'todo'
+    category: str
+    difficulty: str
     due_at: Optional[str] = None
-    is_active: int = 1
+    done: int = 0
+    poms_done: Optional[int] = None
+    poms_estimate: Optional[int] = None
 
 @router.get("/users/{user_id}/tasks")
 def list_tasks(user_id: int, db: Session = Depends(get_db)):
@@ -32,11 +41,16 @@ def list_tasks(user_id: int, db: Session = Depends(get_db)):
 def create_task(item: TaskIn, user_id: int, db: Session = Depends(get_db)):
     try:
         db_item = TaskItem(
+            id=item.id,
             user_id=user_id,
             title=item.title,
             type=item.type,
+            category=item.category,
+            difficulty=item.difficulty,
             due_at=item.due_at,
-            is_active=item.is_active
+            done=item.done,
+            poms_done=item.poms_done,
+            poms_estimate=item.poms_estimate
         )
         db.add(db_item)
         db.flush()
@@ -63,8 +77,12 @@ def update_task(user_id: int, task_id: int, item: TaskIn, db: Session = Depends(
     try:
         db_item.title = item.title
         db_item.type = item.type
+        db_item.category = item.category
+        db_item.difficulty = item.difficulty
         db_item.due_at = item.due_at
-        db_item.is_active = item.is_active
+        db_item.done = item.done
+        db_item.poms_done = item.poms_done
+        db_item.poms_estimate = item.poms_estimate
         
         db.commit()
         db.refresh(db_item)
