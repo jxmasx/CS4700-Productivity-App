@@ -28,7 +28,7 @@ function loadEconomy() {
     const raw = localStorage.getItem(ECON_KEY);
     if (raw) return JSON.parse(raw);
   } catch {}
-  return { gold: 0, xp: 0, stats: { str: 0, cha: 0, dex: 0 }, lastRollover: todayKey() };
+  return { gold: 0, xp: 0, stats: { str: 0, cha: 0, dex: 0, wis: 0, int: 0}, lastRollover: todayKey() };
 }
 function saveEconomy(e) {
   try { localStorage.setItem(ECON_KEY, JSON.stringify(e)); } catch {}
@@ -67,7 +67,7 @@ function applyReward(econ, task) {
     xp: Math.max(0, econ.xp + diff.xp),
     stats: { ...econ.stats },
   };
-  if (["str", "dex", "cha"].includes(statKey)) {
+  if (["str", "dex", "cha", "wis", "int"].includes(statKey)) {
     next.stats[statKey] = Math.max(0, (next.stats[statKey] || 0) + 1);
   }
   return next;
@@ -81,7 +81,7 @@ function revokeReward(econ, task) {
     xp: Math.max(0, econ.xp - diff.xp),
     stats: { ...econ.stats },
   };
-  if (["str", "dex", "cha"].includes(statKey)) {
+  if (["str", "dex", "cha", "wis", "int"].includes(statKey)) {
     next.stats[statKey] = Math.max(0, (next.stats[statKey] || 0) - 1);
   }
   return next;
@@ -95,7 +95,7 @@ function applyMissPenalty(econ, task) {
     xp: Math.max(0, econ.xp - diff.penalty),
     stats: { ...econ.stats },
   };
-  if (["str", "dex", "cha"].includes(statKey)) {
+  if (["str", "dex", "cha", "wis", "int"].includes(statKey)) {
     next.stats[statKey] = Math.max(0, (next.stats[statKey] || 0) - 1);
   }
   return next;
@@ -185,7 +185,7 @@ export default function TaskBoard() {
       id: crypto.randomUUID(),
       title: addForm.title || "(no title)",
       type: ["Habit", "Daily", "To-Do"].includes(addForm.type) ? addForm.type : "To-Do",
-      category: ["STR", "DEX", "CHA"].includes(addForm.category) ? addForm.category : "STR",
+      category: ["STR", "DEX", "CHA", "WIS", "INT"].includes(addForm.category) ? addForm.category : "STR",
       difficulty: DIFF_ORDER.includes(addForm.difficulty) ? addForm.difficulty : "Easy",
       dueAt: due ? due.toISOString() : null,
       done: false,
@@ -236,7 +236,7 @@ export default function TaskBoard() {
         ...t,
         title: editForm.title || "(no title)",
         type: ["Habit", "Daily", "To-Do"].includes(editForm.type) ? editForm.type : t.type,
-        category: ["STR", "DEX", "CHA"].includes(editForm.category) ? editForm.category : t.category,
+        category: ["STR", "DEX", "CHA", "WIS", "INT"].includes(editForm.category) ? editForm.category : t.category,
         difficulty: DIFF_ORDER.includes(editForm.difficulty) ? editForm.difficulty : t.difficulty,
         pomsEstimate: Math.max(0, parseInt(editForm.pomsEstimate || 0, 10)),
         dueAt: due ? due.toISOString() : null,

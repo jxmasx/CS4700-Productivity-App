@@ -148,7 +148,6 @@ export default function PomodoroTimer() {
 
   useEffect(() => {
     setS((prev) => migrateAndNormalize(prev));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
