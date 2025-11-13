@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, Depends
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional
 from db import get_db, Base
 from sqlalchemy import Column, Integer, String
@@ -21,23 +21,38 @@ class TaskItem(Base):
     poms_estimate = Column(Integer)
 
 class TaskIn(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    
     id: str
     title: str
     type: str = "todo"         # 'habit' | 'daily' | 'todo'
     category: str
     difficulty: str
-    due_at: Optional[str] = None
-    done: int = 0
-    poms_done: Optional[int] = None
-    poms_estimate: Optional[int] = None
+    due_at: Optional[str] = Field(None, alias="dueAt")
+    done: bool = False
+    poms_done: Optional[int] = Field(None, alias="pomsDone")
+    poms_estimate: Optional[int] = Field(None, alias="pomsEstimate")
 
-@router.get("/users/{user_id}/tasks")
+class TaskOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+    
+    id: str
+    user_id: int = Field(serialization_alias="userId")
+    title: str
+    type: str
+    category: str
+    difficulty: str
+    due_at: Optional[str] = Field(None, serialization_alias="dueAt")
+    done: bool
+    poms_done: Optional[int] = Field(None, serialization_alias="pomsDone")
+    poms_estimate: Optional[int] = Field(None, serialization_alias="pomsEstimate")
+
+@router.get("/users/{user_id}/tasks", response_model=list[TaskOut])
 def list_tasks(user_id: int, db: Session = Depends(get_db)):
     db_items = db.query(TaskItem).filter(TaskItem.user_id == user_id).all()
-    
     return db_items
 
-@router.post("/users/{user_id}/tasks", status_code=201)
+@router.post("/users/{user_id}/tasks", status_code=201, response_model=TaskOut)
 def create_task(item: TaskIn, user_id: int, db: Session = Depends(get_db)):
     try:
         db_item = TaskItem(
@@ -48,7 +63,7 @@ def create_task(item: TaskIn, user_id: int, db: Session = Depends(get_db)):
             category=item.category,
             difficulty=item.difficulty,
             due_at=item.due_at,
-            done=item.done,
+            done=int(item.done),
             poms_done=item.poms_done,
             poms_estimate=item.poms_estimate
         )
@@ -64,8 +79,8 @@ def create_task(item: TaskIn, user_id: int, db: Session = Depends(get_db)):
 
     return db_item
 
-@router.put("/users/{user_id}/tasks/{task_id}")
-def update_task(user_id: int, task_id: int, item: TaskIn, db: Session = Depends(get_db)):
+@router.put("/users/{user_id}/tasks/{task_id}", response_model=TaskOut)
+def update_task(user_id: int, task_id: str, item: TaskIn, db: Session = Depends(get_db)):
     db_item = db.query(TaskItem).filter(
         TaskItem.id == task_id,
         TaskItem.user_id == user_id
@@ -80,7 +95,7 @@ def update_task(user_id: int, task_id: int, item: TaskIn, db: Session = Depends(
         db_item.category = item.category
         db_item.difficulty = item.difficulty
         db_item.due_at = item.due_at
-        db_item.done = item.done
+        db_item.done = int(item.done)
         db_item.poms_done = item.poms_done
         db_item.poms_estimate = item.poms_estimate
         
@@ -94,7 +109,7 @@ def update_task(user_id: int, task_id: int, item: TaskIn, db: Session = Depends(
     return db_item
 
 @router.delete("/users/{user_id}/tasks/{task_id}", status_code=204)
-def delete_task(user_id: int, task_id: int, db: Session = Depends(get_db)):
+def delete_task(user_id: int, task_id: str, db: Session = Depends(get_db)):
     db_item = db.query(TaskItem).filter(
         TaskItem.id == task_id,
         TaskItem.user_id == user_id

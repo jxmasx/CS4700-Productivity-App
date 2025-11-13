@@ -109,13 +109,13 @@ async def create_item(item: SignupIn, db: Session = Depends(get_db)):
         pass_item = PassItem(user_id=db_item.id, pass_hash=pass_hash)
         db.add(pass_item)
         
-        default_tasks = [
-            TaskItem(user_id=db_item.id, title="Read 10 pages", type="Habit", due_at=None, is_active=1),
-            TaskItem(user_id=db_item.id, title="AM workout", type="Daily", due_at=None, is_active=1),
-            TaskItem(user_id=db_item.id, title="Finish dashboard layout", type="To-Do", due_at=None, is_active=1),
-        ]
-        for task in default_tasks:
-            db.add(task)
+        # default_tasks = [
+        #     TaskItem(user_id=db_item.id, title="Read 10 pages", type="Habit", due_at=None, done=0),
+        #     TaskItem(user_id=db_item.id, title="AM workout", type="Daily", due_at=None, done=0),
+        #     TaskItem(user_id=db_item.id, title="Finish dashboard layout", type="To-Do", due_at=None, done=0),
+        # ]
+        # for task in default_tasks:
+        #     db.add(task)
         
         db.commit()
         db.refresh(db_item)
