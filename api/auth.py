@@ -149,3 +149,37 @@ async def get_user(user_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="User not found")
     
     return user
+
+# Update user economy (XP and Gold)
+class EconomyUpdate(BaseModel):
+    xp_delta: int = 0
+    gold_delta: int = 0
+
+@router.patch("/users/{user_id}/economy", response_model=UserFullOut)
+async def update_economy(user_id: int, economy: EconomyUpdate, db: Session = Depends(get_db)):
+    user = db.query(UserItem).filter(UserItem.id == user_id).first()
+    
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    user.xp += economy.xp_delta
+    user.gold += economy.gold_delta
+    
+    while user.xp >= user.xp_max:
+        user.xp -= user.xp_max
+        user.level += 1
+        user.xp_max = int(user.xp_max * 1.15 + 25)
+    
+    if user.xp < 0:
+        user.xp = 0
+    if user.gold < 0:
+        user.gold = 0
+    
+    try:
+        db.commit()
+        db.refresh(user)
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Failed to update economy: {str(e)}")
+    
+    return user

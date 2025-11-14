@@ -1,7 +1,9 @@
 import React, { useEffect, useRef, useState } from "react";
+import { API } from "../apiBase";
+import { useUser } from "../contexts/UserContext";
 
 const STORE = "qf_pomodoro_v1";
-const DASHBOARD_STORE = "qf_dashboard_state_v1";
+// const DASHBOARD_STORE = "qf_dashboard_state_v1";
 
 const DEFAULTS = {
   mode: "focus", // "focus" | "short" | "long"
@@ -65,38 +67,60 @@ function saveStore(s) {
   } catch {}
 }
 
-function loadDashboard() {
-  try {
-    const raw = localStorage.getItem(DASHBOARD_STORE);
-    if (raw) return JSON.parse(raw);
-  } catch {}
-  return null;
-}
-function saveDashboard(next) {
-  try {
-    localStorage.setItem(DASHBOARD_STORE, JSON.stringify(next));
-  } catch {}
-}
+// function loadDashboard() {
+//   try {
+//     const raw = localStorage.getItem(DASHBOARD_STORE);
+//     if (raw) return JSON.parse(raw);
+//   } catch {}
+//   return null;
+// }
+// function saveDashboard(next) {
+//   try {
+//     localStorage.setItem(DASHBOARD_STORE, JSON.stringify(next));
+//   } catch {}
+// }
 
 // ---------- XP / Gold ----------
-function addEconomy({ xp = 0, gold = 0 }) {
-  const db = loadDashboard();
-  if (!db || !db.profile) return;
-  let { profile } = db;
-  let xpMax = profile.xpMax || 100;
-  let curXP = (profile.xp || 0) + xp;
-  let level = profile.level || 1;
-  let goldBal = (profile.gold || 0) + gold;
-  while (curXP >= xpMax) {
-    curXP -= xpMax;
-    level += 1;
-    xpMax = Math.floor(xpMax * 1.15 + 25);
+// function addEconomy({ xp = 0, gold = 0 }) {
+//   const db = loadDashboard();
+//   if (!db || !db.profile) return;
+//   let { profile } = db;
+//   let xpMax = profile.xpMax || 100;
+//   let curXP = (profile.xp || 0) + xp;
+//   let level = profile.level || 1;
+//   let goldBal = (profile.gold || 0) + gold;
+//   while (curXP >= xpMax) {
+//     curXP -= xpMax;
+//     level += 1;
+//     xpMax = Math.floor(xpMax * 1.15 + 25);
+//   }
+//   if (curXP < 0) curXP = 0;
+//   if (goldBal < 0) goldBal = 0;
+//   const next = { ...db, profile: { ...profile, xp: curXP, xpMax, level, gold: goldBal } };
+//   saveDashboard(next);
+//   window.dispatchEvent(new CustomEvent("economy:changed", { detail: { xp, gold } }));
+// }
+
+async function addEconomyToBackend(userId, { xp = 0, gold = 0 }) {
+  if (!userId) return false;
+  
+  try {
+    const response = await fetch(API(`/users/${userId}/economy`), {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ xp_delta: xp, gold_delta: gold })
+    });
+    
+    if (!response.ok) {
+      console.error('Failed to update economy');
+      return false;
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('Error updating economy:', error);
+    return false;
   }
-  if (curXP < 0) curXP = 0;
-  if (goldBal < 0) goldBal = 0;
-  const next = { ...db, profile: { ...profile, xp: curXP, xpMax, level, gold: goldBal } };
-  saveDashboard(next);
-  window.dispatchEvent(new CustomEvent("economy:changed", { detail: { xp, gold } }));
 }
 
 // ---------- Sounds / Notifications ----------
@@ -132,6 +156,7 @@ function formatMMSS(totalSeconds) {
 }
 
 export default function PomodoroTimer() {
+  const { user, refreshUser } = useUser();
   const [s, setS] = useState(loadStore);
   const tickRef = useRef(null);
   const titleBaseRef = useRef(document.title);
@@ -166,7 +191,14 @@ export default function PomodoroTimer() {
         if (isFocus) {
           const rewardXP = prev.focusMin * 2;
           const rewardGold = Math.floor(prev.focusMin / 5);
-          addEconomy({ xp: rewardXP, gold: rewardGold });
+          
+          // addEconomy({ xp: rewardXP, gold: rewardGold });
+          addEconomyToBackend(user?.id, { xp: rewardXP, gold: rewardGold }).then((success) => {
+            if (success) {
+              refreshUser();
+            }
+          });
+          
           notify("Focus complete 🎉", `+${rewardXP} XP, +${rewardGold} Gold`);
           beep();
 

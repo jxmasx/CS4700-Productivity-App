@@ -115,23 +115,20 @@ export default function Dashboard() {
   useEffect(() => {
     setState(clone(USER_INFO))
   }, [user, isAuthenticated, loading]);
+  
   // useEffect(() => {
-  //   localStorage.setItem(STORE, JSON.stringify(state));
-  // }, [state]);
-
-  useEffect(() => {
-    const onEconomy = () => {
-      try {
-        const saved = localStorage.getItem(STORE);
-        if (saved) {
-          const latest = JSON.parse(saved);
-          setState((prev) => ({ ...prev, profile: { ...prev.profile, ...latest.profile } }));
-        }
-      } catch {}
-    };
-    window.addEventListener("economy:changed", onEconomy);
-    return () => window.removeEventListener("economy:changed", onEconomy);
-  }, []);
+  //   const onEconomy = () => {
+  //     try {
+  //       const saved = localStorage.getItem(STORE);
+  //       if (saved) {
+  //         const latest = JSON.parse(saved);
+  //         setState((prev) => ({ ...prev, profile: { ...prev.profile, ...latest.profile } }));
+  //       }
+  //     } catch {}
+  //   };
+  //   window.addEventListener("economy:changed", onEconomy);
+  //   return () => window.removeEventListener("economy:changed", onEconomy);
+  // }, []);
 
   // calendar connect prompt
   useEffect(() => {
