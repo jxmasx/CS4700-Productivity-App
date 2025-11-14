@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "../contexts/UserContext";
+import { API } from "../apiBase";
 
 export default function Login() {
   const [user, setUser] = useState("");
@@ -19,7 +20,7 @@ export default function Login() {
     }
 
     try {
-      const response = await fetch('https://questify.duckdns.org/api/login', {
+      const response = await fetch(API('/login'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
