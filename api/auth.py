@@ -76,7 +76,7 @@ class UserFullOut(BaseModel):
     wisdom: int
     charisma: int
     user_class: str
-    last_rollover: str = None
+    last_rollover: Optional[str] = None
     
     class Config:
         from_attributes = True
