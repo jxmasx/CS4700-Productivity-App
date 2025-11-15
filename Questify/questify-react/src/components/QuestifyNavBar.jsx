@@ -11,6 +11,7 @@
 
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
+import { useUser } from "../contexts/UserContext";
 
 const REMEMBER_KEY = "questify_remembered_user_id";
 
@@ -18,6 +19,7 @@ const QuestifyNavBar = () => {
   /*useLocation lets us know which route we are currently on
     so we can highlight the active button.*/
   const location = useLocation();
+  const { logout } = useUser();
 
   /*Helper: returns true if a given path is the current path.*/
   const isActive = (path) => location.pathname === path;
@@ -165,7 +167,10 @@ const QuestifyNavBar = () => {
         {/*Log Out Button*/}
         <Link
           to="/"
-          onClick={() => localStorage.removeItem(REMEMBER_KEY)}
+          onClick={() => {
+            localStorage.removeItem(REMEMBER_KEY);
+            logout();
+          }}
           style={{
             textDecoration: "none",
           }}
