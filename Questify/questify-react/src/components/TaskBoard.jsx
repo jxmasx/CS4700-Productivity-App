@@ -1,109 +1,203 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
+import { useUser } from "../contexts/UserContext";
+import { readTasks, createTask, updateTask, deleteTask } from '../utils/TaskAPI.js'
+import { updateEconomy, updateRollover } from '../utils/EconAPI.js'
 
-const STORAGE_KEY = "qf_tasks_v1";
-const ECON_KEY = "qf_economy_v1";
+// const STORAGE_KEY = "qf_tasks_v1";
+// const ECON_KEY = "qf_economy_v1";
 
 const TYPE_COLORS = {
-  Habit:   { bg: "#cfe4ff", stripe: "#4b90ff" },
-  Daily:   { bg: "#cfeecf", stripe: "#46a546" },
+  Habit: { bg: "#cfe4ff", stripe: "#4b90ff" },
+  Daily: { bg: "#cfeecf", stripe: "#46a546" },
   "To-Do": { bg: "#ffd6ea", stripe: "#ff5aa5" },
 };
 
 const DIFF_ORDER = ["Trivial", "Easy", "Medium", "Hard", "Epic"];
 const DIFFICULTY = {
-  Trivial: { gold: 2,  xp: 2,  penalty: 1 },
-  Easy:    { gold: 5,  xp: 5,  penalty: 2 },
-  Medium:  { gold: 10, xp: 10, penalty: 5 },
-  Hard:    { gold: 20, xp: 20, penalty: 10 },
-  Epic:    { gold: 35, xp: 35, penalty: 18 },
+  Trivial: { gold: 2, xp: 2, penalty: 1 },
+  Easy: { gold: 5, xp: 5, penalty: 2 },
+  Medium: { gold: 10, xp: 10, penalty: 5 },
+  Hard: { gold: 20, xp: 20, penalty: 10 },
+  Epic: { gold: 35, xp: 35, penalty: 18 },
 };
 
 function todayKey(d = new Date()) {
   return d.toISOString().slice(0, 10);
 }
 
-function loadEconomy() {
-  try {
-    const raw = localStorage.getItem(ECON_KEY);
-    if (raw) return JSON.parse(raw);
-  } catch {}
-  return { gold: 0, xp: 0, stats: { str: 0, cha: 0, dex: 0, wis: 0, int: 0}, lastRollover: todayKey() };
-}
-function saveEconomy(e) {
-  try { localStorage.setItem(ECON_KEY, JSON.stringify(e)); } catch {}
-}
+// function loadEconomy() {
+//   try {
+//     const raw = localStorage.getItem(ECON_KEY);
+//     if (raw) return JSON.parse(raw);
+//   } catch { }
+//   return { gold: 0, xp: 0, stats: { str: 0, cha: 0, dex: 0, wis: 0, int: 0 }, lastRollover: todayKey() };
+// }
+// function saveEconomy(e) {
+//   try { localStorage.setItem(ECON_KEY, JSON.stringify(e)); } catch { }
+// }
 
-function loadTasks() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return JSON.parse(raw);
-  } catch {}
-  return [
-    { id: "t1", title: "Read 10 pages", type: "Habit", dueAt: null, done: false, pomsDone: 0, pomsEstimate: 1, category: "CHA", difficulty: "Easy" },
-    { id: "t2", title: "AM workout", type: "Daily", dueAt: null, done: false, pomsDone: 0, pomsEstimate: 1, category: "STR", difficulty: "Medium" },
-    { id: "t3", title: "Finish dashboard layout", type: "To-Do", dueAt: null, done: false, pomsDone: 0, pomsEstimate: 3, category: "DEX", difficulty: "Hard" },
-  ];
-}
-function saveTasks(tasks) {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks)); } catch {}
-}
+// function loadTasks() {
+//   try {
+//     const raw = localStorage.getItem(STORAGE_KEY);
+//     if (raw) return JSON.parse(raw);
+//   } catch { }
+//   return [
+//     { id: "t1", title: "Read 10 pages", type: "Habit", dueAt: null, done: false, pomsDone: 0, pomsEstimate: 1, category: "CHA", difficulty: "Easy" },
+//     { id: "t2", title: "AM workout", type: "Daily", dueAt: null, done: false, pomsDone: 0, pomsEstimate: 1, category: "STR", difficulty: "Medium" },
+//     { id: "t3", title: "Finish dashboard layout", type: "To-Do", dueAt: null, done: false, pomsDone: 0, pomsEstimate: 3, category: "DEX", difficulty: "Hard" },
+//   ];
+// }
+// function saveTasks(tasks) {
+//   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks)); } catch { }
+// }
 
 function fmtDue(dueAt) {
   if (!dueAt) return "";
   const d = new Date(dueAt);
   const today = new Date();
-  const isOverdue = d.setHours(23,59,59,999) < today.getTime();
+  const isOverdue = d.setHours(23, 59, 59, 999) < today.getTime();
   const label = new Date(dueAt).toLocaleDateString([], { month: "short", day: "numeric" });
   return (isOverdue ? "Overdue · " : "") + label;
 }
 
-function applyReward(econ, task) {
+// function applyReward(econ, task) {
+//   const diff = DIFFICULTY[task.difficulty] || DIFFICULTY.Easy;
+//   const statKey = (task.category || "").toLowerCase();
+//   const next = {
+//     ...econ,
+//     gold: Math.max(0, econ.gold + diff.gold),
+//     xp: Math.max(0, econ.xp + diff.xp),
+//     stats: { ...econ.stats },
+//   };
+//   if (["str", "dex", "cha", "wis", "int"].includes(statKey)) {
+//     next.stats[statKey] = Math.max(0, (next.stats[statKey] || 0) + 1);
+//   }
+//   return next;
+// }
+
+// Add reward to user account
+function applyReward(task) {
   const diff = DIFFICULTY[task.difficulty] || DIFFICULTY.Easy;
   const statKey = (task.category || "").toLowerCase();
-  const next = {
-    ...econ,
-    gold: Math.max(0, econ.gold + diff.gold),
-    xp: Math.max(0, econ.xp + diff.xp),
-    stats: { ...econ.stats },
+  const statMap = {
+    str: "strength_delta",
+    dex: "dexterity_delta",
+    int: "intelligence_delta",
+    wis: "wisdom_delta",
+    cha: "charisma_delta",
   };
-  if (["str", "dex", "cha", "wis", "int"].includes(statKey)) {
-    next.stats[statKey] = Math.max(0, (next.stats[statKey] || 0) + 1);
+  
+  const deltas = {
+    xp_delta: diff.xp,
+    gold_delta: diff.gold,
+    strength_delta: 0,
+    dexterity_delta: 0,
+    intelligence_delta: 0,
+    wisdom_delta: 0,
+    charisma_delta: 0,
+  };
+  
+  if (statMap[statKey]) {
+    deltas[statMap[statKey]] = 1;
   }
-  return next;
+  
+  return deltas;
 }
-function revokeReward(econ, task) {
+
+// function revokeReward(econ, task) {
+//   const diff = DIFFICULTY[task.difficulty] || DIFFICULTY.Easy;
+//   const statKey = (task.category || "").toLowerCase();
+//   const next = {
+//     ...econ,
+//     gold: Math.max(0, econ.gold - diff.gold),
+//     xp: Math.max(0, econ.xp - diff.xp),
+//     stats: { ...econ.stats },
+//   };
+//   if (["str", "dex", "cha", "wis", "int"].includes(statKey)) {
+//     next.stats[statKey] = Math.max(0, (next.stats[statKey] || 0) - 1);
+//   }
+//   return next;
+// }
+
+// Remove reward from user account
+function revokeReward(task) {
   const diff = DIFFICULTY[task.difficulty] || DIFFICULTY.Easy;
   const statKey = (task.category || "").toLowerCase();
-  const next = {
-    ...econ,
-    gold: Math.max(0, econ.gold - diff.gold),
-    xp: Math.max(0, econ.xp - diff.xp),
-    stats: { ...econ.stats },
+  const statMap = {
+    str: "strength_delta",
+    dex: "dexterity_delta",
+    int: "intelligence_delta",
+    wis: "wisdom_delta",
+    cha: "charisma_delta",
   };
-  if (["str", "dex", "cha", "wis", "int"].includes(statKey)) {
-    next.stats[statKey] = Math.max(0, (next.stats[statKey] || 0) - 1);
+  
+  const deltas = {
+    xp_delta: -diff.xp,
+    gold_delta: -diff.gold,
+    strength_delta: 0,
+    dexterity_delta: 0,
+    intelligence_delta: 0,
+    wisdom_delta: 0,
+    charisma_delta: 0,
+  };
+  
+  if (statMap[statKey]) {
+    deltas[statMap[statKey]] = -1;
   }
-  return next;
+  
+  return deltas;
 }
-function applyMissPenalty(econ, task) {
+// function applyMissPenalty(econ, task) {
+//   const diff = DIFFICULTY[task.difficulty] || DIFFICULTY.Easy;
+//   const statKey = (task.category || "").toLowerCase();
+//   const next = {
+//     ...econ,
+//     gold: Math.max(0, econ.gold - diff.penalty),
+//     xp: Math.max(0, econ.xp - diff.penalty),
+//     stats: { ...econ.stats },
+//   };
+//   if (["str", "dex", "cha", "wis", "int"].includes(statKey)) {
+//     next.stats[statKey] = Math.max(0, (next.stats[statKey] || 0) - 1);
+//   }
+//   return next;
+// }
+
+// Apply penalty for missing a task
+function applyMissPenalty(task) {
   const diff = DIFFICULTY[task.difficulty] || DIFFICULTY.Easy;
   const statKey = (task.category || "").toLowerCase();
-  const next = {
-    ...econ,
-    gold: Math.max(0, econ.gold - diff.penalty),
-    xp: Math.max(0, econ.xp - diff.penalty),
-    stats: { ...econ.stats },
+  const statMap = {
+    str: "strength_delta",
+    dex: "dexterity_delta",
+    int: "intelligence_delta",
+    wis: "wisdom_delta",
+    cha: "charisma_delta",
   };
-  if (["str", "dex", "cha", "wis", "int"].includes(statKey)) {
-    next.stats[statKey] = Math.max(0, (next.stats[statKey] || 0) - 1);
+  
+  const deltas = {
+    xp_delta: -diff.penalty,
+    gold_delta: -diff.penalty,
+    strength_delta: 0,
+    dexterity_delta: 0,
+    intelligence_delta: 0,
+    wisdom_delta: 0,
+    charisma_delta: 0,
+  };
+  
+  if (statMap[statKey]) {
+    deltas[statMap[statKey]] = -1;
   }
-  return next;
+  
+  return deltas;
 }
 
 export default function TaskBoard() {
-  const [tasks, setTasks] = useState(loadTasks);
-  const [economy, setEconomy] = useState(loadEconomy);
+  const { user, refreshUser } = useUser();
+
+  // const [economy, setEconomy] = useState(loadEconomy);
+  const [tasks, setTasks] = useState([]);
+  const rolloverInProgress = React.useRef(false);
 
   const [showAdd, setShowAdd] = useState(false);
   const [addForm, setAddForm] = useState({
@@ -118,34 +212,107 @@ export default function TaskBoard() {
   const [showEdit, setShowEdit] = useState(false);
   const [editForm, setEditForm] = useState(null);
 
-  useEffect(() => { saveTasks(tasks); }, [tasks]);
-  useEffect(() => { saveEconomy(economy); }, [economy]);
-
+  // useEffect(() => { saveTasks(tasks); }, [tasks]);
   useEffect(() => {
-    const doRolloverIfNeeded = () => {
-      const today = todayKey();
-      if (economy.lastRollover === today) return;
-
-      let econ = { ...economy };
-      let nextTasks = tasks;
-
-      tasks.forEach(t => {
-        if (t.type === "Daily" && !t.done) {
-          econ = applyMissPenalty(econ, t);
+    async function fetchTasks() {
+      if (user && user.id) {
+        try {
+          const data = await readTasks(user.id);
+          setTasks(data);
+        } catch (error) {
+          console.error('Error in fetchTasks:', error);
         }
-      });
-      nextTasks = nextTasks.map(t => (t.type === "Daily" ? { ...t, done: false } : t));
+      }
+    }
+    fetchTasks();
+  }, [user]);
 
-      econ.lastRollover = today;
-      setEconomy(econ);
-      setTasks(nextTasks);
-      window.dispatchEvent(new Event("calendar:refresh"));
+
+  // useEffect(() => {
+  //   const doRolloverIfNeeded = () => {
+  //     const today = todayKey();
+  //     if (economy.lastRollover === today) return;
+  //
+  //     let econ = { ...economy };
+  //     let nextTasks = tasks;
+  //
+  //     tasks.forEach(t => {
+  //       if (t.type === "Daily" && !t.done) {
+  //         econ = applyMissPenalty(econ, t);
+  //       }
+  //     });
+  //     nextTasks = nextTasks.map(t => (t.type === "Daily" ? { ...t, done: false } : t));
+  //
+  //     econ.lastRollover = today;
+  //     setEconomy(econ);
+  //     setTasks(nextTasks);
+  //     window.dispatchEvent(new Event("calendar:refresh"));
+  //   };
+  //
+  //   doRolloverIfNeeded();
+  //   const iv = setInterval(doRolloverIfNeeded, 60 * 1000);
+  //   return () => clearInterval(iv);
+  // }, [economy.lastRollover, tasks]);
+
+// Rollover from backennd
+  useEffect(() => {
+    const doRolloverIfNeeded = async () => {
+      if (!user || !user.id || !tasks.length) return;
+      if (rolloverInProgress.current) return;
+      
+      const today = todayKey();
+      const lastRollover = user.last_rollover;
+      
+      if (lastRollover === today) return;
+
+      rolloverInProgress.current = true;
+
+      try {
+        let penalties = [];
+        tasks.forEach(t => {
+          if (t.type === "Daily" && !t.done) {
+            penalties.push(applyMissPenalty(t));
+          }
+        });
+
+        // Apply all penalties
+        if (penalties.length > 0) {
+          const totalDeltas = penalties.reduce((acc, p) => ({
+            xp_delta: acc.xp_delta + p.xp_delta,
+            gold_delta: acc.gold_delta + p.gold_delta,
+            strength_delta: acc.strength_delta + p.strength_delta,
+            dexterity_delta: acc.dexterity_delta + p.dexterity_delta,
+            intelligence_delta: acc.intelligence_delta + p.intelligence_delta,
+            wisdom_delta: acc.wisdom_delta + p.wisdom_delta,
+            charisma_delta: acc.charisma_delta + p.charisma_delta,
+          }), { xp_delta: 0, gold_delta: 0, strength_delta: 0, dexterity_delta: 0, intelligence_delta: 0, wisdom_delta: 0, charisma_delta: 0 });
+          
+          await updateEconomy(user.id, totalDeltas);
+        }
+
+        // Reset Daily tasks
+        const nextTasks = tasks.map(t => (t.type === "Daily" ? { ...t, done: false } : t));
+        for (const t of nextTasks) {
+          if (t.type === "Daily") {
+            await updateTask(user.id, t.id, t);
+          }
+        }
+        setTasks(nextTasks);
+
+        // Update last_rollover in database
+        await updateRollover(user.id);
+        
+        // Refresh user data to get updated last_rollover
+        await refreshUser();
+        
+        window.dispatchEvent(new Event("calendar:refresh"));
+      } finally {
+        rolloverInProgress.current = false;
+      }
     };
 
     doRolloverIfNeeded();
-    const iv = setInterval(doRolloverIfNeeded, 60 * 1000);
-    return () => clearInterval(iv);
-  }, [economy.lastRollover, tasks]); 
+  }, [user?.id, tasks.length]);
 
   useEffect(() => {
     const onPomComplete = (e) => {
@@ -192,6 +359,7 @@ export default function TaskBoard() {
       pomsDone: 0,
       pomsEstimate: Math.max(0, parseInt(addForm.pomsEstimate || 0, 10)),
     };
+    createTask(user.id, t)
     setTasks(prev => [...prev, t]);
     setShowAdd(false);
     window.dispatchEvent(new Event("calendar:refresh"));
@@ -202,19 +370,43 @@ export default function TaskBoard() {
     window.dispatchEvent(new CustomEvent("pomodoro:setTask", { detail: { id: task.id, title: task.title } }));
   };
 
-  const toggleDone = (id) => {
-    setTasks((prev) => {
-      let econ = { ...economy };
-      const next = prev.map((t) => {
-        if (t.id !== id) return t;
-        const nowDone = !t.done;
-        if (nowDone) econ = applyReward(econ, t);
-        else econ = revokeReward(econ, t);
-        return { ...t, done: nowDone };
-      });
-      setEconomy(econ);
-      return next;
-    });
+  // const toggleDone = (id) => {
+  //   setTasks((prev) => {
+  //     let econ = { ...economy };
+  //     const next = prev.map((t) => {
+  //       if (t.id !== id) return t;
+  //       const nowDone = !t.done;
+  //       if (nowDone) econ = applyReward(econ, t);
+  //       else econ = revokeReward(econ, t);
+  //       const newData = { ...t, done: nowDone }
+  //       updateTask(user.id, id, newData)
+  //       return newData;
+  //     });
+  //     setEconomy(econ);
+  //     return next;
+  //   });
+  // };
+
+  // Toggle task as done with economy
+  const toggleDone = async (id) => {
+    const task = tasks.find(t => t.id === id);
+    if (!task || !user || !user.id) return;
+
+    const nowDone = !task.done;
+    const deltas = nowDone ? applyReward(task) : revokeReward(task);
+    
+    // Update backend economy
+    await updateEconomy(user.id, deltas);
+    
+    // Update task
+    const newData = { ...task, done: nowDone };
+    await updateTask(user.id, id, newData);
+    
+    // Update local state
+    setTasks((prev) => prev.map((t) => (t.id === id ? newData : t)));
+    
+    // Refresh user data to update stats in Dashboard
+    await refreshUser();
   };
 
   const openEdit = (id) => {
@@ -222,7 +414,7 @@ export default function TaskBoard() {
     if (!t) return;
     setEditForm({
       ...t,
-      dueAtLocal: t.dueAt ? t.dueAt.slice(0,10) : "",
+      dueAtLocal: t.dueAt ? t.dueAt.slice(0, 10) : "",
     });
     setShowEdit(true);
   };
@@ -232,7 +424,7 @@ export default function TaskBoard() {
     setTasks(prev => prev.map(t => {
       if (t.id !== editForm.id) return t;
       const due = editForm.dueAtLocal ? new Date(editForm.dueAtLocal + "T00:00:00") : null;
-      return {
+      const newData = {
         ...t,
         title: editForm.title || "(no title)",
         type: ["Habit", "Daily", "To-Do"].includes(editForm.type) ? editForm.type : t.type,
@@ -240,7 +432,9 @@ export default function TaskBoard() {
         difficulty: DIFF_ORDER.includes(editForm.difficulty) ? editForm.difficulty : t.difficulty,
         pomsEstimate: Math.max(0, parseInt(editForm.pomsEstimate || 0, 10)),
         dueAt: due ? due.toISOString() : null,
-      };
+      }
+      updateTask(user.id, editForm.id, newData)
+      return newData;
     }));
     setShowEdit(false);
     setEditForm(null);
@@ -250,6 +444,7 @@ export default function TaskBoard() {
   const removeTask = (id) => {
     if (!window.confirm("Delete this task?")) return;
     setTasks(prev => prev.filter(t => t.id !== id));
+    deleteTask(user.id, id)
   };
 
   const counts = useMemo(() => {

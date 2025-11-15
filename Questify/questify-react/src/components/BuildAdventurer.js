@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import NPCDialog from "./NPCDialog";
+import QuestifyNavBar from "./QuestifyNavBar";
 
 const SPECIES = ["human", "elf", "orc", "dwarf"];
 const OUTFITS = [
@@ -175,11 +176,15 @@ export default function BuildAdventurer() {
       }}
     >
       <div className="wood" style={{ width: "min(1100px, 96vw)", padding: "1.5rem" }}>
+        
         <div className="title-band" aria-hidden="true">
-          <div className="leaf" style={{ transform: "rotate(-18deg)" }} />
+          {/* <div className="leaf" style={{ transform: "rotate(-18deg)" }} /> */}
           <div className="title">Choose Your Adventurer</div>
-          <div className="leaf" style={{ transform: "rotate(18deg) scaleX(-1)" }} />
+          {/* <div className="leaf" style={{ transform: "rotate(18deg) scaleX(-1)" }} /> */}
         </div>
+
+        {/*Global Navigation Bar – same across all of Questify*/}
+              <QuestifyNavBar />
 
         <div
           className="panel"

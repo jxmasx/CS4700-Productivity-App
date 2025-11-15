@@ -1,6 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "../contexts/UserContext";
+import { API } from "../apiBase";
+
+const REMEMBER_KEY = "questify_remembered_user_id";
 
 export default function Login() {
   const [user, setUser] = useState("");
@@ -9,6 +12,21 @@ export default function Login() {
   const [remember, setRemember] = useState(false);
   const navigate = useNavigate();
   const { fetchUserById } = useUser();
+
+  // If remember me is selected, automatically log in next time
+  useEffect(() => {
+    const rememberedUserId = localStorage.getItem(REMEMBER_KEY);
+    if (rememberedUserId) {
+      fetchUserById(parseInt(rememberedUserId))
+        .then(() => {
+          navigate("/dashboard");
+        })
+        .catch(() => {
+          // Remove auto login if it happens to fail
+          localStorage.removeItem(REMEMBER_KEY);
+        });
+    }
+  }, [fetchUserById, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -19,7 +37,7 @@ export default function Login() {
     }
 
     try {
-      const response = await fetch('https://questify.duckdns.org/api/login', {
+      const response = await fetch(API('/login'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -39,6 +57,14 @@ export default function Login() {
       
       if (result.id) {
         await fetchUserById(result.id);
+        
+        // Remember user if remember me selected with localstorage
+        if (remember) {
+          localStorage.setItem(REMEMBER_KEY, result.id.toString());
+        } else {
+          localStorage.removeItem(REMEMBER_KEY);
+        }
+        
         navigate("/dashboard");
       }
     } catch (error) {
@@ -111,7 +137,7 @@ export default function Login() {
               <button
                 className="link"
                 type="button"
-                onClick={() => alert("Password reset feature coming soon.")}
+                onClick={() => alert("LOL TOO BAD!!!")}
               >
                 Forgot?
               </button>

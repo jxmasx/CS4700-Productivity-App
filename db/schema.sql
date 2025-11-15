@@ -1,5 +1,5 @@
 --
--- File generated with SQLiteStudio v3.4.17 on Thu Nov 13 14:09:13 2025
+-- File generated with SQLiteStudio v3.4.17 on Sat Nov 15 14:20:38 2025
 --
 -- Text encoding used: System
 --
@@ -153,7 +153,7 @@ CREATE TABLE IF NOT EXISTS subquests (
 );
 
 -- Table: tasks
-CREATE TABLE IF NOT EXISTS tasks (id INTEGER PRIMARY KEY, user_id INTEGER NOT NULL REFERENCES users (id) ON DELETE CASCADE, title TEXT NOT NULL, type TEXT NOT NULL CHECK (type IN ('Habit', 'Daily', 'To-Do')), category TEXT NOT NULL, difficulty TEXT NOT NULL, due_at TEXT, done INTEGER NOT NULL, poms_done INTEGER, poms_estimate NUMERIC);
+CREATE TABLE IF NOT EXISTS tasks (id TEXT PRIMARY KEY NOT NULL, user_id INTEGER NOT NULL REFERENCES users (id) ON DELETE CASCADE, title TEXT NOT NULL, type TEXT NOT NULL CHECK (type IN ('Habit', 'Daily', 'To-Do')), category TEXT NOT NULL, difficulty TEXT NOT NULL, due_at TEXT, done INTEGER NOT NULL, poms_done INTEGER, poms_estimate INTEGER);
 
 -- Table: user_achievements
 CREATE TABLE IF NOT EXISTS user_achievements (
@@ -171,7 +171,7 @@ CREATE TABLE IF NOT EXISTS user_passwords (
           );
 
 -- Table: users
-CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, email TEXT UNIQUE NOT NULL, display_name TEXT NOT NULL, created_at TEXT NOT NULL DEFAULT (datetime('now')), level INTEGER NOT NULL DEFAULT 1, xp INTEGER NOT NULL DEFAULT 0, xp_max INTEGER NOT NULL DEFAULT (100), hp INTEGER NOT NULL DEFAULT 100, mana INTEGER NOT NULL DEFAULT 50, gold INTEGER NOT NULL DEFAULT 0, diamonds INTEGER NOT NULL DEFAULT 0, guild_rank TEXT NOT NULL DEFAULT 'Bronze', guild_streak INTEGER NOT NULL DEFAULT (0), strength INTEGER NOT NULL DEFAULT (0), dexterity INTEGER NOT NULL DEFAULT (0), intelligence INTEGER NOT NULL DEFAULT (0), wisdom INTEGER NOT NULL DEFAULT (0), charisma INTEGER NOT NULL DEFAULT (0), user_class TEXT NOT NULL DEFAULT Classless);
+CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, email TEXT UNIQUE NOT NULL, display_name TEXT NOT NULL, created_at TEXT NOT NULL DEFAULT (datetime('now')), level INTEGER NOT NULL DEFAULT 1, xp INTEGER NOT NULL DEFAULT 0, xp_max INTEGER NOT NULL DEFAULT (100), hp INTEGER NOT NULL DEFAULT 100, mana INTEGER NOT NULL DEFAULT 50, gold INTEGER NOT NULL DEFAULT 0, diamonds INTEGER NOT NULL DEFAULT 0, guild_rank TEXT NOT NULL DEFAULT 'Bronze', guild_streak INTEGER NOT NULL DEFAULT (0), strength INTEGER NOT NULL DEFAULT (0), dexterity INTEGER NOT NULL DEFAULT (0), intelligence INTEGER NOT NULL DEFAULT (0), wisdom INTEGER NOT NULL DEFAULT (0), charisma INTEGER NOT NULL DEFAULT (0), user_class TEXT NOT NULL DEFAULT Classless, last_rollover TEXT);
 
 -- Index: idx_focus_user_time
 CREATE INDEX IF NOT EXISTS idx_focus_user_time ON focus_sessions(user_id, started_at);

@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
+import { API } from "../apiBase";
 
 const UserContext = createContext();
 
@@ -44,7 +45,7 @@ export function UserProvider({ children }) {
     if (!userId) return null;
 
     try {
-      const response = await fetch(`http://127.0.0.1:5000/api/users/${userId}`);
+      const response = await fetch(API(`/users/${userId}`));
       if (response.ok) {
         const userData = await response.json();
         updateUser(userData);
@@ -64,7 +65,7 @@ export function UserProvider({ children }) {
     if (!user?.id) return;
 
     try {
-      const response = await fetch(`http://127.0.0.1:5000/api/users/${user.id}`);
+      const response = await fetch(API(`/users/${user.id}`));
       if (response.ok) {
         const userData = await response.json();
         updateUser(userData);

@@ -1,10 +1,11 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { useUser } from "../contexts/UserContext";
 import TaskBoard from "./TaskBoard";
 import "../style.css";
 import CalendarView from "./CalendarView";
 import PomodoroTimer from "./PomodoroTimer";
 import ConnectCalendarModal from "./ConnectCalendarModal";
-import TopNav from "./TopNav";
+import QuestifyNavBar from "./QuestifyNavBar";
 import { API } from "../apiBase";
 
 import {
@@ -18,32 +19,33 @@ import {
 } from "chart.js";
 import { Radar as RadarChartJS } from "react-chartjs-2";
 
+// Activate specific components in ChartJS
 ChartJS.register(RadialLinearScale, PointElement, LineElement, Filler, Tooltip, Legend);
 
-const STORE = "qf_dashboard_state_v1";
-
+// Create a clone of a JSON object to prevent overwriting
 const clone = (obj) =>
   typeof structuredClone === "function" ? structuredClone(obj) : JSON.parse(JSON.stringify(obj));
 
+// Default data that is shown if no user is loaded yet
 const DEFAULT = {
   profile: {
-    name: "Ash",
-    class: "Scholar",
-    rank: "Apprentice",
-    streak: 1,
-    level: 1,
+    name: "",
+    class: "",
+    rank: "",
+    streak: 0,
+    level: 0,
     xp: 0,
     xpMax: 100,
-    gold: 250,
-    diamonds: 5,
+    gold: 0,
+    diamonds: 0,
   },
   baseStats: {
-    STR: 4,
-    DEX: 6,
-    STAM: 5,
-    INT: 7,
-    WIS: 5,
-    CHARM: 3,
+    STR: 0,
+    DEX: 0,
+    STAM: 0,
+    INT: 0,
+    WIS: 0,
+    CHARM: 0,
   },
   gearSlots: ["head", "chest", "arm", "pants", "foot", "weapon1", "weapon2", "extra"],
   gear: {},
@@ -55,39 +57,67 @@ const DEFAULT = {
     { id: "i5", name: "Boots", slot: "foot", bonus: { DEX: 1 }, desc: "Move with purpose." },
     { id: "i6", name: "Charm Locket", slot: "extra", bonus: { CHARM: 1 }, desc: "A glimmer of charisma." },
   ],
-  tasks: [
-    { id: "t1", title: "Write 300 words", type: "task", progress: 0, exp: 40, gold: 20, diamonds: 0 },
-    { id: "t2", title: "Daily Water", type: "habit", progress: 0, exp: 15, gold: 5, diamonds: 0 },
-    { id: "t3", title: "PR for Sprint", type: "task", progress: 0, exp: 30, gold: 15, diamonds: 0 },
-  ],
 };
 
 export default function Dashboard() {
+  // Gets the user data from UserContext
+  const { user, isAuthenticated, loading, refreshUser } = useUser();
+
+  // Base to grab assets from public folder
   const base = process.env.PUBLIC_URL || "";
+
+  // State for task tab (TaskList, Calendar, Pomodoro, Inventory)
   const [taskTab, setTaskTab] = useState("list");
+
+  // State that determines whether or not to render calendar
   const [showCalModal, setShowCalModal] = useState(false);
 
-  const [state, setState] = useState(() => {
-    const saved = localStorage.getItem(STORE);
-    return saved ? JSON.parse(saved) : clone(DEFAULT);
-  });
+  // Sets the current user info state
+  const [state, setState] = useState(DEFAULT);
 
-  useEffect(() => {
-    localStorage.setItem(STORE, JSON.stringify(state));
-  }, [state]);
+  // Set user info as a JSON object usable by the dashboard
+  const USER_INFO = {
+    profile: {
+      name: user?.display_name ?? "",
+      class: user?.user_class ?? "",
+      rank: user?.guild_rank ?? "",
+      streak: user?.guild_streak ?? 0,
+      level: user?.level ?? 0,
+      xp: user?.xp ?? 0,
+      xpMax: user?.xp_max ?? 100,
+      gold: user?.gold ?? 0,
+      diamonds: user?.diamonds ?? 0,
+    },
+    baseStats: {
+      STR: user?.strength ?? 0,
+      DEX: user?.dexterity ?? 0,
+      STAM: user?.stamina ?? 0,
+      INT: user?.intelligence ?? 0,
+      WIS: user?.wisdom ?? 0,
+      CHARM: user?.charisma ?? 0,
+    },
+    gearSlots: ["head", "chest", "arm", "pants", "foot", "weapon1", "weapon2", "extra"],
+    gear: {},
+    items: [
+      { id: "i1", name: "Bronze Sword", slot: "weapon1", bonus: { STR: 1 }, desc: "Reliable beginner blade." },
+      { id: "i2", name: "Oak Staff", slot: "weapon2", bonus: { INT: 1 }, desc: "Channeling focus for spells." },
+      { id: "i3", name: "Leather Cap", slot: "head", bonus: { STAM: 1 }, desc: "Light protection." },
+      { id: "i4", name: "Scholar Robe", slot: "chest", bonus: { INT: 1, WIS: 1 }, desc: "Robes of learning." },
+      { id: "i5", name: "Boots", slot: "foot", bonus: { DEX: 1 }, desc: "Move with purpose." },
+      { id: "i6", name: "Charm Locket", slot: "extra", bonus: { CHARM: 1 }, desc: "A glimmer of charisma." },
+    ],
+  }
 
+  // Set the user info on mount or on dependency change
   useEffect(() => {
-    const onEconomy = () => {
-      try {
-        const saved = localStorage.getItem(STORE);
-        if (saved) {
-          const latest = JSON.parse(saved);
-          setState((prev) => ({ ...prev, profile: { ...prev.profile, ...latest.profile } }));
-        }
-      } catch {}
-    };
-    window.addEventListener("economy:changed", onEconomy);
-    return () => window.removeEventListener("economy:changed", onEconomy);
+    setState(clone(USER_INFO))
+  }, [user, isAuthenticated, loading]);
+
+  // Refresh user data on mount and when returning to dashboard
+  useEffect(() => {
+    if (user?.id) {
+      refreshUser();
+    }
   }, []);
 
   // calendar connect prompt
@@ -109,7 +139,7 @@ export default function Dashboard() {
   const onCalendarConnected = async () => {
     try {
       await fetch(API(`/calendar/sync`), { method: "POST", credentials: "include" });
-    } catch {}
+    } catch { }
     window.dispatchEvent(new CustomEvent("calendar:refresh"));
     setShowCalModal(false);
   };
@@ -197,6 +227,7 @@ export default function Dashboard() {
     "pants", "foot", null,
   ];
 
+  // Data which is used by the radar chart (user stats)
   const radarData = useMemo(() => {
     const STR = totalStats.STR ?? 0;
     const DEX = totalStats.DEX ?? 0;
@@ -235,16 +266,13 @@ export default function Dashboard() {
 
   return (
     <div className="wrap">
-      <TopNav
-        gold={state.profile.gold}
-        diamonds={state.profile.diamonds}
-        onAvatar={() => window.dispatchEvent(new CustomEvent("nav:go", { detail: { to: "avatar" } }))}
-        onGuild={() => window.dispatchEvent(new CustomEvent("nav:go", { detail: { to: "guild" } }))}
-        onConnect={() => window.dispatchEvent(new CustomEvent("nav:go", { detail: { to: "connect" } }))}
-        onSettings={() => window.dispatchEvent(new CustomEvent("nav:go", { detail: { to: "settings" } }))}
-      />
-
       <div className="wood">
+
+        {/* <div className="title-band"></div> */}
+        {/*Global navigation – links Dashboard, Adventurer, Guild Hall, Intro, etc.*/}
+        <QuestifyNavBar />
+        {/* <div className="dashboard-root"></div> */}
+
         <div className="title-band"></div>
 
         <div className="dashboard-root container-1200">

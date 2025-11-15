@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "../contexts/UserContext";
+import { API } from "../apiBase";
 
 export default function Signup() {
   const [email, setEmail] = useState("");
@@ -13,7 +14,7 @@ export default function Signup() {
 
   async function readUsers() {
     try {
-      const response = await fetch('https://questify.duckdns.org/api/users');
+      const response = await fetch(API('/users'));
       
       if (response.status === 404) {
         return [];
@@ -34,7 +35,7 @@ export default function Signup() {
 
   async function writeUser(email, username, password) {
     try {
-      const response = await fetch('https://questify.duckdns.org/api/signup', {
+      const response = await fetch(API('/signup'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

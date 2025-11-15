@@ -2,6 +2,7 @@
   "name": "questify-react",
   "version": "0.1.0",
   "private": true,
+  "homepage": "https://jxmasx.github.io/CS4700-Productivity-App",
   "dependencies": {
     "@fullcalendar/daygrid": "^6.1.19",
     "@fullcalendar/interaction": "^6.1.19",
@@ -32,7 +33,9 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d build"
   },
   "eslintConfig": {
     "extends": [
@@ -52,5 +55,8 @@
       "last 1 safari version"
     ]
   },
-  "proxy": "http://localhost:8001"
+  "proxy": "http://localhost:8001",
+  "devDependencies": {
+    "gh-pages": "^6.3.0"
+  }
 }
