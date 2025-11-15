@@ -12,6 +12,8 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 
+const REMEMBER_KEY = "questify_remembered_user_id";
+
 const QuestifyNavBar = () => {
   /*useLocation lets us know which route we are currently on
     so we can highlight the active button.*/
@@ -69,10 +71,10 @@ const QuestifyNavBar = () => {
               padding: "6px 12px",
               borderRadius: 999,
               border: "1px solid #8b5e34",
-              background: isActive("/")
+              background: isActive("/dashboard")
                 ? "#3b2a18"
                 : "rgba(255, 247, 232, 0.95)",
-              color: isActive("/") ? "#fff7e8" : "#3f220e",
+              color: isActive("/dashboard") ? "#fff7e8" : "#3f220e",
               fontSize: "0.8rem",
               fontWeight: 700,
               cursor: "pointer",
@@ -157,6 +159,31 @@ const QuestifyNavBar = () => {
             }}
           >
             Story Intro
+          </button>
+        </Link>
+
+        {/*Log Out Button*/}
+        <Link
+          to="/"
+          onClick={() => localStorage.removeItem(REMEMBER_KEY)}
+          style={{
+            textDecoration: "none",
+          }}
+        >
+          <button
+            type="button"
+            style={{
+              padding: "6px 12px",
+              borderRadius: 999,
+              border: "1px solid #8b5e34",
+              background: "rgba(255, 247, 232, 0.95)",
+              color: "#3f220e",
+              fontSize: "0.8rem",
+              fontWeight: 700,
+              cursor: "pointer",
+            }}
+          >
+            Log Out
           </button>
         </Link>
       </div>
