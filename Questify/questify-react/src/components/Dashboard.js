@@ -5,7 +5,8 @@ import "../style.css";
 import CalendarView from "./CalendarView";
 import PomodoroTimer from "./PomodoroTimer";
 import ConnectCalendarModal from "./ConnectCalendarModal";
-import TopNav from "./TopNav";
+// import TopNav from "./TopNav";
+import QuestifyNavBar from "./QuestifyNavBar";
 import { API } from "../apiBase";
 
 import {
@@ -19,13 +20,16 @@ import {
 } from "chart.js";
 import { Radar as RadarChartJS } from "react-chartjs-2";
 
+// 
 ChartJS.register(RadialLinearScale, PointElement, LineElement, Filler, Tooltip, Legend);
 
-const STORE = "qf_dashboard_state_v1";
+// const STORE = "qf_dashboard_state_v1";
 
+// Create a clone of a JSON object to prevent overwriting
 const clone = (obj) =>
   typeof structuredClone === "function" ? structuredClone(obj) : JSON.parse(JSON.stringify(obj));
 
+// Default data that is shown if no user is loaded yet
 const DEFAULT = {
   profile: {
     name: "",
@@ -56,25 +60,25 @@ const DEFAULT = {
     { id: "i5", name: "Boots", slot: "foot", bonus: { DEX: 1 }, desc: "Move with purpose." },
     { id: "i6", name: "Charm Locket", slot: "extra", bonus: { CHARM: 1 }, desc: "A glimmer of charisma." },
   ],
-  tasks: [
-    { id: "t1", title: "Write 300 words", type: "task", progress: 0, exp: 40, gold: 20, diamonds: 0 },
-    { id: "t2", title: "Daily Water", type: "habit", progress: 0, exp: 15, gold: 5, diamonds: 0 },
-    { id: "t3", title: "PR for Sprint", type: "task", progress: 0, exp: 30, gold: 15, diamonds: 0 },
-  ],
 };
 
 export default function Dashboard() {
+  // Gets the user data from UserContext
   const { user, isAuthenticated, loading } = useUser();
+
+  // 
   const base = process.env.PUBLIC_URL || "";
+
+  // 
   const [taskTab, setTaskTab] = useState("list");
+
+  // 
   const [showCalModal, setShowCalModal] = useState(false);
 
+  // Sets the current user info state
   const [state, setState] = useState(DEFAULT);
-  // const [state, setState] = useState(() => {
-  //   const saved = localStorage.getItem(STORE);
-  //   return saved ? JSON.parse(saved) : clone(DEFAULT);
-  // });
 
+  // Set user info as a JSON object usable by the dashboard
   const USER_INFO = {
     profile: {
       name: user?.display_name ?? "",
@@ -105,30 +109,12 @@ export default function Dashboard() {
       { id: "i5", name: "Boots", slot: "foot", bonus: { DEX: 1 }, desc: "Move with purpose." },
       { id: "i6", name: "Charm Locket", slot: "extra", bonus: { CHARM: 1 }, desc: "A glimmer of charisma." },
     ],
-    tasks: [
-      { id: "t1", title: "Write 300 words", type: "task", progress: 0, exp: 40, gold: 20, diamonds: 0 },
-      { id: "t2", title: "Daily Water", type: "habit", progress: 0, exp: 15, gold: 5, diamonds: 0 },
-      { id: "t3", title: "PR for Sprint", type: "task", progress: 0, exp: 30, gold: 15, diamonds: 0 },
-    ],
   }
 
+  // Set the user info on mount or on dependency change
   useEffect(() => {
     setState(clone(USER_INFO))
   }, [user, isAuthenticated, loading]);
-  
-  // useEffect(() => {
-  //   const onEconomy = () => {
-  //     try {
-  //       const saved = localStorage.getItem(STORE);
-  //       if (saved) {
-  //         const latest = JSON.parse(saved);
-  //         setState((prev) => ({ ...prev, profile: { ...prev.profile, ...latest.profile } }));
-  //       }
-  //     } catch {}
-  //   };
-  //   window.addEventListener("economy:changed", onEconomy);
-  //   return () => window.removeEventListener("economy:changed", onEconomy);
-  // }, []);
 
   // calendar connect prompt
   useEffect(() => {
@@ -149,7 +135,7 @@ export default function Dashboard() {
   const onCalendarConnected = async () => {
     try {
       await fetch(API(`/calendar/sync`), { method: "POST", credentials: "include" });
-    } catch {}
+    } catch { }
     window.dispatchEvent(new CustomEvent("calendar:refresh"));
     setShowCalModal(false);
   };
@@ -237,6 +223,7 @@ export default function Dashboard() {
     "pants", "foot", null,
   ];
 
+  // Data which is used by the radar chart (user stats)
   const radarData = useMemo(() => {
     const STR = totalStats.STR ?? 0;
     const DEX = totalStats.DEX ?? 0;
@@ -275,16 +262,22 @@ export default function Dashboard() {
 
   return (
     <div className="wrap">
-      <TopNav
+      {/* <TopNav
         gold={state.profile.gold}
         diamonds={state.profile.diamonds}
         onAvatar={() => window.dispatchEvent(new CustomEvent("nav:go", { detail: { to: "avatar" } }))}
         onGuild={() => window.dispatchEvent(new CustomEvent("nav:go", { detail: { to: "guild" } }))}
         onConnect={() => window.dispatchEvent(new CustomEvent("nav:go", { detail: { to: "connect" } }))}
         onSettings={() => window.dispatchEvent(new CustomEvent("nav:go", { detail: { to: "settings" } }))}
-      />
+      /> */}
 
       <div className="wood">
+
+        {/* <div className="title-band"></div> */}
+        {/*Global navigation – links Dashboard, Adventurer, Guild Hall, Intro, etc.*/}
+        <QuestifyNavBar />
+        {/* <div className="dashboard-root"></div> */}
+        
         <div className="title-band"></div>
 
         <div className="dashboard-root container-1200">
