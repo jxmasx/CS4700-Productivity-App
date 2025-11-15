@@ -7,7 +7,7 @@
   - Reads/writes gold, inventory, and pending rewards via localStorage (Will need to be changed to connect to database)
 
  LOCALSTORAGE KEYS (must match QuestCard / other systems)
-  - adventurerGold       -> total gold in Guild Hall context
+  - adventurerGold       -> total gold in Guild Hall context            -> SHOULD BE IN BACKEND NOW
   - adventurerInventory  -> simple list of obtained items/rewards
   - pendingRewards       -> unclaimed rewards; objects like:
       { id, label, gold, xp }
@@ -17,6 +17,8 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AdventurerNamePlate from "./AdventurerNamePlate";
 import QuestifyNavBar from "./QuestifyNavBar";
+import { useUser } from "../contexts/UserContext";
+import { updateEconomy } from "../utils/EconAPI";
 
 
 /*Default stock in the Guild Shop.*/
@@ -56,22 +58,20 @@ const LOCAL_KEYS = {
 
 const GuildHall = () => {
   const navigate = useNavigate();
+  // Gets the user data from UserContext
+  const { user, isAuthenticated, loading, refreshUser } = useUser();
 
   /* ---------------------------------------------------------------------------
    GOLD STATE
   ---------------------------------------------------------------------------*/
   const [gold, setGold] = useState(0);
 
-  /*Loads gold once on mount (fallback starter: 100).*/
+  /*Loads gold from user context*/
   useEffect(() => {
-    const stored = Number(localStorage.getItem(LOCAL_KEYS.GOLD));
-    setGold(Number.isFinite(stored) ? stored : 100);
-  }, []);
-
-  /*Persists gold whenever it changes.*/
-  useEffect(() => {
-    localStorage.setItem(LOCAL_KEYS.GOLD, String(gold));
-  }, [gold]);
+    if (user) {
+      setGold(user.gold ?? 0);
+    }
+  }, [user]);
 
   /*---------------------------------------------------------------------------
    INVENTORY STATE
@@ -110,52 +110,95 @@ const GuildHall = () => {
     localStorage.setItem(LOCAL_KEYS.PENDING, JSON.stringify(next));
   };
 
+  /* ---------------------------------------------------------------------------
+   REFRESH USER AFTER SETTINGS STATES
+  ---------------------------------------------------------------------------*/
+
+  /*Refresh user data from backend on mount to get latest gold*/
+  useEffect(() => {
+    if (user?.id) {
+      refreshUser();
+    }
+  }, [user?.id]);
+
   // ---------------------------------------------------------------------------
   // CLAIMING REWARDS
   // ---------------------------------------------------------------------------
-  const claimReward = (rewardId) => {
+  const claimReward = async (rewardId) => {
     const reward = pendingRewards.find((r) => r.id === rewardId);
-    if (!reward) return;
+    if (!reward || !user) return;
 
-    /*1)Adds gold*/
-    setGold((prev) => prev + (reward.gold || 0));
+    const goldDelta = reward.gold || 0;
+    const xpDelta = reward.xp || 0;
 
-    /*2)Logs reward in inventory for "flavor"*/
-    setInventory((items) => [
-      ...items,
-      {
-        id: `reward-${reward.id}-${Date.now()}`,
-        name: reward.label || "Completed Habit",
-        from: "habit",
-        goldValue: reward.gold || 0,
-      },
-    ]);
+    /*1)Update backend with gold and xp deltas*/
+    const result = await updateEconomy(user.id, {
+      gold_delta: goldDelta,
+      xp_delta: xpDelta
+    });
 
-    /*3)Removes from pending*/
-    savePendingRewards(pendingRewards.filter((r) => r.id !== rewardId));
+    if (result) {
+      /*2)Update local gold state*/
+      setGold((prev) => prev + goldDelta);
+
+      /*3)Logs reward in inventory for "flavor"*/
+      setInventory((items) => [
+        ...items,
+        {
+          id: `reward-${reward.id}-${Date.now()}`,
+          name: reward.label || "Completed Habit",
+          from: "habit",
+          goldValue: goldDelta,
+        },
+      ]);
+
+      /*4)Removes from pending*/
+      savePendingRewards(pendingRewards.filter((r) => r.id !== rewardId));
+
+      /*5)Refresh user data to sync with backend*/
+      refreshUser();
+    }
   };
 
-  const claimAllRewards = () => {
-    if (!pendingRewards.length) return;
+  const claimAllRewards = async () => {
+    if (!pendingRewards.length || !user) return;
 
     const totalGold = pendingRewards.reduce(
       (sum, r) => sum + (r.gold || 0),
       0
     );
+    const totalXP = pendingRewards.reduce(
+      (sum, r) => sum + (r.xp || 0),
+      0
+    );
 
-    setGold((prev) => prev + totalGold);
+    /*1)Update backend with total deltas*/
+    const result = await updateEconomy(user.id, {
+      gold_delta: totalGold,
+      xp_delta: totalXP
+    });
 
-    setInventory((items) => [
-      ...items,
-      ...pendingRewards.map((r) => ({
-        id: `reward-${r.id}-${Date.now()}-${Math.random()}`,
-        name: r.label || "Completed Habit",
-        from: "habit",
-        goldValue: r.gold || 0,
-      })),
-    ]);
+    if (result) {
+      /*2)Update local gold state*/
+      setGold((prev) => prev + totalGold);
 
-    savePendingRewards([]);
+      /*3)Add all rewards to inventory*/
+      setInventory((items) => [
+        ...items,
+        ...pendingRewards.map((r) => ({
+          id: `reward-${r.id}-${Date.now()}-${Math.random()}`,
+          name: r.label || "Completed Habit",
+          from: "habit",
+          goldValue: r.gold || 0,
+        })),
+      ]);
+
+      /*4)Clear pending rewards*/
+      savePendingRewards([]);
+
+      /*5)Refresh user data to sync with backend*/
+      refreshUser();
+    }
   };
 
   /*---------------------------------------------------------------------------
@@ -165,46 +208,72 @@ const GuildHall = () => {
 
   const canAfford = (cost) => gold >= cost;
 
-  const buyItem = (item) => {
-    if (!canAfford(item.cost)) return;
+  const buyItem = async (item) => {
+    if (!canAfford(item.cost) || !user) return;
 
-    setGold((prev) => prev - item.cost);
-    setInventory((items) => [
-      ...items,
-      {
-        id: `shop-${item.id}-${Date.now()}`,
-        name: item.name,
-        from: "shop",
-      },
-    ]);
+    const goldDelta = -item.cost; // Negative because spending
+
+    /*1)Update backend with negative delta*/
+    const result = await updateEconomy(user.id, { gold_delta: goldDelta });
+
+    if (result) {
+      /*2)Update local gold state optimistically*/
+      setGold((prev) => prev - item.cost);
+
+      /*3)Add item to inventory*/
+      setInventory((items) => [
+        ...items,
+        {
+          id: `shop-${item.id}-${Date.now()}`,
+          name: item.name,
+          from: "shop",
+        },
+      ]);
+
+      /*4)Refresh user data to sync with backend*/
+      refreshUser();
+    }
   };
 
   const [customName, setCustomName] = useState("");
   const [customCost, setCustomCost] = useState(10);
 
-  const handleCreateCustom = (e) => {
+  const handleCreateCustom = async (e) => {
     e.preventDefault();
 
     const trimmed = customName.trim();
-    if (!trimmed) return;
+    if (!trimmed || !user) return;
 
     const cost = Number(customCost) || 0;
     if (!canAfford(cost)) return;
 
-    setGold((prev) => prev - cost);
+    const goldDelta = -cost; // Negative because spending
 
-    setInventory((items) => [
-      ...items,
-      {
-        id: `custom-${Date.now()}`,
-        name: trimmed,
-        from: "custom",
-        cost,
-      },
-    ]);
+    /*1)Update backend with negative delta*/
+    const result = await updateEconomy(user.id, { gold_delta: goldDelta });
 
-    setCustomName("");
-    setCustomCost(10);
+    if (result) {
+      /*2)Update local gold state*/
+      setGold((prev) => prev - cost);
+
+      /*3)Add custom reward to inventory*/
+      setInventory((items) => [
+        ...items,
+        {
+          id: `custom-${Date.now()}`,
+          name: trimmed,
+          from: "custom",
+          cost,
+        },
+      ]);
+
+      /*4)Reset form*/
+      setCustomName("");
+      setCustomCost(10);
+
+      /*5)Refresh user data to sync with backend*/
+      refreshUser();
+    }
   };
 
   /*Basic info about the adventurer, pulled from BuildAdventurer.*/
@@ -237,8 +306,8 @@ const GuildHall = () => {
         style={{ width: "min(1100px, 96vw)", padding: "1.5rem" }}
       >
 
-         {/*Global Navigation Bar – same across all of Questify*/}
-            <QuestifyNavBar />
+        {/*Global Navigation Bar – same across all of Questify*/}
+        <QuestifyNavBar />
 
         {/*Title band*/}
         <div className="title-band" aria-hidden="true">
@@ -253,13 +322,13 @@ const GuildHall = () => {
             gold={gold}
             guildStreak={0}
             rank="Guild Novice"
-            expPercent={0}
+            expPercent={user ? (user.xp / user.xp_max) * 100 : 0}
             spriteUrl={
               storedAdventurer.outfit && storedAdventurer.species
                 ? `/sprites/avatar/outfit_${storedAdventurer.outfit}_${storedAdventurer.species}.png`
                 : undefined
             }
-            level={1}
+            level={user?.level ?? 1}
             actionLabel="Return to Dashboard"
             onAction={() => navigate("/")}
           />
@@ -279,10 +348,10 @@ const GuildHall = () => {
           <div style={{ fontWeight: 700 }}>
             Current Gold: <span style={{ fontWeight: 900 }}>{gold}</span>
           </div>
-           
 
-         {/*Ignore This: Button to return to Dashboard | replaced with navigator bar*/}  
-         {/* <button
+
+          {/*Ignore This: Button to return to Dashboard | replaced with navigator bar*/}
+          {/* <button
             type="button"
             className="chip"
             onClick={() => navigate("/")}
@@ -299,7 +368,7 @@ const GuildHall = () => {
             Return to Dashboard
           </button> */}
         </div>
-                
+
 
         {/*Main Grid: left (rewards) / right (shop + custom)*/}
         <div
@@ -700,7 +769,7 @@ const GuildHall = () => {
                   style={{
                     background:
                       customName.trim() &&
-                      canAfford(Number(customCost) || 0)
+                        canAfford(Number(customCost) || 0)
                         ? "#2f241a"
                         : "#8b5e34",
                     color: "#fff7e8",
@@ -709,7 +778,7 @@ const GuildHall = () => {
                     fontWeight: 700,
                     cursor:
                       customName.trim() &&
-                      canAfford(Number(customCost) || 0)
+                        canAfford(Number(customCost) || 0)
                         ? "pointer"
                         : "not-allowed",
                     border: "none",

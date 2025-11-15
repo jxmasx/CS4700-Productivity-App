@@ -5,7 +5,6 @@ import "../style.css";
 import CalendarView from "./CalendarView";
 import PomodoroTimer from "./PomodoroTimer";
 import ConnectCalendarModal from "./ConnectCalendarModal";
-// import TopNav from "./TopNav";
 import QuestifyNavBar from "./QuestifyNavBar";
 import { API } from "../apiBase";
 
@@ -20,10 +19,8 @@ import {
 } from "chart.js";
 import { Radar as RadarChartJS } from "react-chartjs-2";
 
-// 
+// Activate specific components in ChartJS
 ChartJS.register(RadialLinearScale, PointElement, LineElement, Filler, Tooltip, Legend);
-
-// const STORE = "qf_dashboard_state_v1";
 
 // Create a clone of a JSON object to prevent overwriting
 const clone = (obj) =>
@@ -66,13 +63,13 @@ export default function Dashboard() {
   // Gets the user data from UserContext
   const { user, isAuthenticated, loading } = useUser();
 
-  // 
+  // Base to grab assets from public folder
   const base = process.env.PUBLIC_URL || "";
 
-  // 
+  // State for task tab (TaskList, Calendar, Pomodoro, Inventory)
   const [taskTab, setTaskTab] = useState("list");
 
-  // 
+  // State that determines whether or not to render calendar
   const [showCalModal, setShowCalModal] = useState(false);
 
   // Sets the current user info state
@@ -262,22 +259,13 @@ export default function Dashboard() {
 
   return (
     <div className="wrap">
-      {/* <TopNav
-        gold={state.profile.gold}
-        diamonds={state.profile.diamonds}
-        onAvatar={() => window.dispatchEvent(new CustomEvent("nav:go", { detail: { to: "avatar" } }))}
-        onGuild={() => window.dispatchEvent(new CustomEvent("nav:go", { detail: { to: "guild" } }))}
-        onConnect={() => window.dispatchEvent(new CustomEvent("nav:go", { detail: { to: "connect" } }))}
-        onSettings={() => window.dispatchEvent(new CustomEvent("nav:go", { detail: { to: "settings" } }))}
-      /> */}
-
       <div className="wood">
 
         {/* <div className="title-band"></div> */}
         {/*Global navigation – links Dashboard, Adventurer, Guild Hall, Intro, etc.*/}
         <QuestifyNavBar />
         {/* <div className="dashboard-root"></div> */}
-        
+
         <div className="title-band"></div>
 
         <div className="dashboard-root container-1200">

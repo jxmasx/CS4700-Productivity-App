@@ -33,7 +33,7 @@ const AdventurerNamePlate = ({
   onAction,
 }) => {
   /*Clamps the EXP between 0 and 100 so a bad value can’t break the bar width.*/
-  const safeExp = Math.max(0, Math.min(expPercent, 100));
+  const safeExp = Math.max(0, Math.min(Math.round(expPercent), 100));
 
   /*Builds an array of 5 booleans that tell us which hearts are “filled”.*/
   const hearts = Array.from({ length: 5 }, (_, index) => index < guildStreak);
