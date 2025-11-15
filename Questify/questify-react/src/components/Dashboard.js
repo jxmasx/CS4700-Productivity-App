@@ -61,7 +61,7 @@ const DEFAULT = {
 
 export default function Dashboard() {
   // Gets the user data from UserContext
-  const { user, isAuthenticated, loading } = useUser();
+  const { user, isAuthenticated, loading, refreshUser } = useUser();
 
   // Base to grab assets from public folder
   const base = process.env.PUBLIC_URL || "";
@@ -112,6 +112,13 @@ export default function Dashboard() {
   useEffect(() => {
     setState(clone(USER_INFO))
   }, [user, isAuthenticated, loading]);
+
+  // Refresh user data on mount and when returning to dashboard
+  useEffect(() => {
+    if (user?.id) {
+      refreshUser();
+    }
+  }, []);
 
   // calendar connect prompt
   useEffect(() => {

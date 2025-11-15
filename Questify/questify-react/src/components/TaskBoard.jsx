@@ -404,6 +404,9 @@ export default function TaskBoard() {
     
     // Update local state
     setTasks((prev) => prev.map((t) => (t.id === id ? newData : t)));
+    
+    // Refresh user data to update stats in Dashboard
+    await refreshUser();
   };
 
   const openEdit = (id) => {
