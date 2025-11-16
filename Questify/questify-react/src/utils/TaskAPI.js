@@ -1,5 +1,13 @@
 import { API } from '../apiBase';
 
+/*---------------------------------------------------------------------------------------------------------------
+Example:
+createTask(user_id=5, taskData={                                        -> Creates a task with title, type, etc.
+      id: crypto.randomUUID(), title: "Title of Task", type: "To-Do",
+      category: "CHA", difficulty: "Easy", dueAt: due.toISOString(),
+      done: false, pomsDone: 0, pomsEstimate: 10,
+    };)
+----------------------------------------------------------------------------------------------------------------*/
 export async function createTask(user_id, taskData) {
   try {
     const response = await fetch(API(`/users/${user_id}/tasks`), {
@@ -14,6 +22,7 @@ export async function createTask(user_id, taskData) {
   }
 }
 
+// Get all of a users tasks from backend using user_id
 export async function readTasks(user_id) {
     try {
       const response = await fetch(API(`/users/${user_id}/tasks`));
@@ -25,6 +34,7 @@ export async function readTasks(user_id) {
     }
   }
 
+// Update a task with same structure as createTask on specified user_id and task_id
 export async function updateTask(user_id, task_id, taskData) {
   try {
     const response = await fetch(API(`/users/${user_id}/tasks/${task_id}`), {
@@ -39,6 +49,7 @@ export async function updateTask(user_id, task_id, taskData) {
   }
 }
 
+// Delete a user's specified task on user_id and task_id
 export async function deleteTask(user_id, task_id) {
   try {
     await fetch(API(`/users/${user_id}/tasks/${task_id}`), {

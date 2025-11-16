@@ -51,7 +51,7 @@ const DEFAULT_SHOP_ITEMS = [
 
 /*LocalStorage key names centralized so they’re easy to reuse. WILL HAVE TO BE CHANGED*/
 const LOCAL_KEYS = {
-  GOLD: "adventurerGold",
+  // GOLD: "adventurerGold",
   INVENTORY: "adventurerInventory",
   PENDING: "pendingRewards",
 };
@@ -59,7 +59,7 @@ const LOCAL_KEYS = {
 const GuildHall = () => {
   const navigate = useNavigate();
   // Gets the user data from UserContext
-  const { user, isAuthenticated, loading, refreshUser } = useUser();
+  const { user, refreshUser } = useUser();
 
   /* ---------------------------------------------------------------------------
    GOLD STATE
