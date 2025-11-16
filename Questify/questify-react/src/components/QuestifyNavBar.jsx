@@ -13,6 +13,7 @@ import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useUser } from "../contexts/UserContext";
 
+// When logging out, forget remembered user (if "Remember Me" selected)
 const REMEMBER_KEY = "questify_remembered_user_id";
 
 const QuestifyNavBar = () => {

@@ -5,16 +5,17 @@ import { readTasks, createTask, updateTask, deleteTask } from '../utils/TaskAPI.
 import { updateEconomy } from '../utils/EconAPI.js'
 import { updateRollover } from '../utils/UserAPI.js'
 
-// const STORAGE_KEY = "qf_tasks_v1";
-// const ECON_KEY = "qf_economy_v1";
-
+// Colors for each task type
 const TYPE_COLORS = {
   Habit: { bg: "#cfe4ff", stripe: "#4b90ff" },
   Daily: { bg: "#cfeecf", stripe: "#46a546" },
   "To-Do": { bg: "#ffd6ea", stripe: "#ff5aa5" },
 };
 
+// Task difficulty order
 const DIFF_ORDER = ["Trivial", "Easy", "Medium", "Hard", "Epic"];
+
+// Task difficulty outcomes for gold, xp, and penalty
 const DIFFICULTY = {
   Trivial: { gold: 2, xp: 2, penalty: 1 },
   Easy: { gold: 5, xp: 5, penalty: 2 },
@@ -23,10 +24,12 @@ const DIFFICULTY = {
   Epic: { gold: 35, xp: 35, penalty: 18 },
 };
 
+// Return date (YYYY-MM-DD) from datetime
 function todayKey(d = new Date()) {
   return d.toISOString().slice(0, 10);
 }
 
+// Format due date for task visual
 function fmtDue(dueAt) {
   if (!dueAt) return "";
   const d = new Date(dueAt);

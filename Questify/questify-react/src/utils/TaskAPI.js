@@ -1,13 +1,13 @@
 import { API } from '../apiBase';
 
-/*---------------------------------------------------------------------------------------------------------------
-Example:
-createTask(user_id=5, taskData={                                        -> Creates a task with title, type, etc.
+/*---------------------------------------------------------------------------------
+Example:                              -> Creates a task with title, type, etc.
+createTask(user_id=5, taskData={                                        
       id: crypto.randomUUID(), title: "Title of Task", type: "To-Do",
       category: "CHA", difficulty: "Easy", dueAt: due.toISOString(),
       done: false, pomsDone: 0, pomsEstimate: 10,
     };)
-----------------------------------------------------------------------------------------------------------------*/
+---------------------------------------------------------------------------------*/
 export async function createTask(user_id, taskData) {
   try {
     const response = await fetch(API(`/users/${user_id}/tasks`), {
