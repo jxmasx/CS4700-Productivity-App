@@ -21,10 +21,11 @@ const QuestCard = ({
   statusMessage = "Quest completed!",
   onQuestCompleted,
   userQuestId = null,
+  initialCompleted = false,
 }) => {
   const { user } = useUser();
 
-  const [isCompleted, setIsCompleted] = useState(false);
+  const [isCompleted, setIsCompleted] = useState(initialCompleted);
   const [showBanner, setShowBanner] = useState(false);
   const [bannerMessage, setBannerMessage] = useState("");
 

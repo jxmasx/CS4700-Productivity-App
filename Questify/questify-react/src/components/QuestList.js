@@ -1,16 +1,7 @@
 import React, { useState, useEffect } from "react";
 import QuestCard from "./QuestCard";
 import { useUser } from "../contexts/UserContext";
-import { getUserQuests } from "../utils/QuestAPI";
-
-// OG Task
-const STARTER_QUEST = {
-    id: "starter-quest-first-habit",
-    label: "Starter Quest: Complete your first habit",
-    rewardXp: 10,
-    rewardGold: 5,
-    statusMessage: "You defended the Hall of Habits. The smog retreats… for now.",
-};
+import { getUserQuests, getQuest } from "../utils/QuestAPI";
 
 export default function QuestList() {
     const { user } = useUser();
@@ -26,18 +17,23 @@ export default function QuestList() {
             try {
                 const userQuests = await getUserQuests(user.id);
 
-                const allQuests = [
-                    {
-                        quest_id: STARTER_QUEST.id,
-                        quest_name: STARTER_QUEST.label,
-                        xp_reward: STARTER_QUEST.rewardXp,
-                        gold_reward: STARTER_QUEST.rewardGold,
-                        completion_message: STARTER_QUEST.statusMessage,
-                        user_quest_id: null, // Local quest, no backend ID
-                    },
-                    ...(userQuests || [])
-                ];
-                setQuests(allQuests);
+                // Get all user quests
+                const allUserQuests = await Promise.all(
+                    (userQuests || []).map(async (userQuest) => {
+                        const questData = await getQuest(userQuest.quest_id);
+                        return {
+                            quest_id: userQuest.quest_id,
+                            quest_name: questData?.label || "Unknown Quest",
+                            xp_reward: questData?.rewardXp || 0,
+                            gold_reward: questData?.rewardGold || 0,
+                            completion_message: questData?.statusMessage || "Quest completed!",
+                            user_quest_id: userQuest.id,
+                            is_done: userQuest.is_done,
+                        };
+                    })
+                );
+                
+                setQuests(allUserQuests);
             } catch (error) {
                 console.log("Error fetching quests:", error)
             }
@@ -64,6 +60,7 @@ export default function QuestList() {
                             rewardGold={quest.gold_reward}
                             statusMessage={quest.completion_message || "Quest completed!"}
                             userQuestId={quest.user_quest_id}
+                            initialCompleted={quest.is_done || false}
                             onQuestCompleted={() => handleQuestCompleted(quest.quest_id)}
                         />
                     </div>

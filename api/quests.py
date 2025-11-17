@@ -39,6 +39,7 @@ class UserQuestItem(Base):
     user_id = Column(Integer)
     quest_id = Column(String)
     is_done = Column(Integer, default=0)
+    completed_at = Column(String, nullable=True)
 
 class UserQuestIn(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
