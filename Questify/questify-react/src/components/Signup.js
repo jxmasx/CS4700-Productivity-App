@@ -90,21 +90,30 @@ export default function Signup() {
 
       const result = await writeUser(email, user, pass);
       if (result.id) {
-
-        // Create starter quest if it doesn't exist and assign it to user (DEFAULT QUEST, NEED TO MOVE THIS SOMEWHERE ELSE!)
-        createQuest({
-          id: "starter-quest-first-habit",
-          label: "Starter Quest: Complete your first habit",
-          rewardXp: 10,
-          rewardGold: 5,
-          statusMessage: "You defended the Hall of Habits. The smog retreats… for now.",
-        }).catch(() => {});
+        // ADD DEFAULT QUEST: NEED TO REMOVE THIS OR SOMETHING
+        try {
+          await createQuest({
+            id: "starter-quest-first-habit",
+            label: "Starter Quest: Complete your first habit",
+            rewardXp: 10,
+            rewardGold: 5,
+            statusMessage: "You defended the Hall of Habits. The smog retreats… for now.",
+          });
+          console.log("Starter quest created/already exists");
+        } catch (err) {
+          console.log("Quest creation failed (may already exist):", err);
+        }
         
-        assignQuestToUser(result.id, {
-          user_id: result.id,
-          quest_id: "starter-quest-first-habit",
-          is_done: false,
-        }).catch((err) => console.error("Failed to assign starter quest:", err));
+        try {
+          await assignQuestToUser(result.id, {
+            user_id: result.id,
+            quest_id: "starter-quest-first-habit",
+            is_done: false,
+          });
+          console.log("Starter quest assigned to user");
+        } catch (err) {
+          console.error("Failed to assign starter quest:", err);
+        }
 
         await fetchUserById(result.id);
         alert("Account created. Welcome to Questify!");

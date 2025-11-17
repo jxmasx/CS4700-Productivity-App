@@ -39,7 +39,7 @@ class UserQuestItem(Base):
     user_id = Column(Integer)
     quest_id = Column(String)
     is_done = Column(Integer, default=0)
-    completed_at = Column(String, nullable=True)
+    completed_at = Column(String, nullable=False, default="")
 
 class UserQuestIn(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
@@ -137,7 +137,8 @@ def assign_quest_to_user(user_id: int, item: UserQuestIn, db: Session = Depends(
         db_item = UserQuestItem(
             user_id=user_id,
             quest_id=item.quest_id,
-            is_done=1 if item.is_done else 0
+            is_done=1 if item.is_done else 0,
+            completed_at=""
         )
         db.add(db_item)
         db.commit()
