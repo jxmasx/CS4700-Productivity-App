@@ -1,10 +1,12 @@
 import React, { useEffect, useRef, useState } from "react";
 import { API } from "../apiBase";
 import { useUser } from "../contexts/UserContext";
+import { updateEconomy } from '../utils/EconAPI.js';
 
 const STORE = "qf_pomodoro_v1";
 // const DASHBOARD_STORE = "qf_dashboard_state_v1";
 
+// Default settings for timer
 const DEFAULTS = {
   mode: "focus", // "focus" | "short" | "long"
   running: false,
@@ -16,32 +18,38 @@ const DEFAULTS = {
   completedFocusRounds: 0,
 };
 
+// Keeps timer value n in range (min, max), else gives fallback
 function clampNumber(n, min, max, fallback) {
   const x = Number(n);
   if (!Number.isFinite(x)) return fallback;
   return Math.min(max, Math.max(min, x));
 }
 
+// Validates timer settings
 function migrateAndNormalize(raw) {
+  // Set base timer with default values
   const base = { ...DEFAULTS, ...(raw || {}) };
 
+  // Handle old versions using breakMin instead of shortMin
   if (raw && raw.breakMin != null && (raw.shortMin == null)) {
     base.shortMin = Number(raw.breakMin);
   }
 
+  // Validate that given timer values fall into specific ranges
   base.focusMin = clampNumber(base.focusMin, 1, 180, DEFAULTS.focusMin);
   base.shortMin = clampNumber(base.shortMin, 1, 60, DEFAULTS.shortMin);
   base.longMin = clampNumber(base.longMin, 1, 90, DEFAULTS.longMin);
   base.roundsUntilLong = clampNumber(base.roundsUntilLong, 1, 10, DEFAULTS.roundsUntilLong);
   base.completedFocusRounds = clampNumber(base.completedFocusRounds, 0, 9999, 0);
 
+  // Calculate seconds from mode of timer (focus, long break, etc)
   const secondsFromMode =
-    (base.mode === "focus"
-      ? base.focusMin
-      : base.mode === "short"
-      ? base.shortMin
-      : base.longMin) * 60;
+    (base.mode === "focus" ? 
+      base.focusMin : 
+      base.mode === "short" ? 
+      base.shortMin : base.longMin) * 60;
 
+  // Validate seconds left on timer
   base.secondsLeft = Number.isFinite(base.secondsLeft) ? base.secondsLeft : secondsFromMode;
 
   if (!Number.isFinite(base.secondsLeft) || base.secondsLeft < 0) {
@@ -80,49 +88,6 @@ function saveStore(s) {
 //   } catch {}
 // }
 
-// ---------- XP / Gold ----------
-// function addEconomy({ xp = 0, gold = 0 }) {
-//   const db = loadDashboard();
-//   if (!db || !db.profile) return;
-//   let { profile } = db;
-//   let xpMax = profile.xpMax || 100;
-//   let curXP = (profile.xp || 0) + xp;
-//   let level = profile.level || 1;
-//   let goldBal = (profile.gold || 0) + gold;
-//   while (curXP >= xpMax) {
-//     curXP -= xpMax;
-//     level += 1;
-//     xpMax = Math.floor(xpMax * 1.15 + 25);
-//   }
-//   if (curXP < 0) curXP = 0;
-//   if (goldBal < 0) goldBal = 0;
-//   const next = { ...db, profile: { ...profile, xp: curXP, xpMax, level, gold: goldBal } };
-//   saveDashboard(next);
-//   window.dispatchEvent(new CustomEvent("economy:changed", { detail: { xp, gold } }));
-// }
-
-async function addEconomyToBackend(userId, { xp = 0, gold = 0 }) {
-  if (!userId) return false;
-  
-  try {
-    const response = await fetch(API(`/users/${userId}/economy`), {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ xp_delta: xp, gold_delta: gold })
-    });
-    
-    if (!response.ok) {
-      console.error('Failed to update economy');
-      return false;
-    }
-    
-    return true;
-  } catch (error) {
-    console.error('Error updating economy:', error);
-    return false;
-  }
-}
-
 // ---------- Sounds / Notifications ----------
 function beep() {
   try {
@@ -148,6 +113,7 @@ function notify(title, body) {
   }
 }
 
+// Format timer in MM:SS notation
 function formatMMSS(totalSeconds) {
   const s = Math.max(0, Math.floor(Number.isFinite(totalSeconds) ? totalSeconds : 0));
   const mPart = String(Math.floor(s / 60)).padStart(2, "0");
@@ -165,17 +131,21 @@ export default function PomodoroTimer() {
     saveStore(s);
   }, [s]);
 
+  // Request browser permission to send an alert when timer is done
   useEffect(() => {
     if (typeof Notification !== "undefined" && Notification.permission === "default") {
       Notification.requestPermission().catch(() => {});
     }
   }, []);
 
+  // Set validated timer settings from state
   useEffect(() => {
     setS((prev) => migrateAndNormalize(prev));
   }, []);
 
+  // Main timer engine
   useEffect(() => {
+    // Run only if timer is running
     if (!s.running) return;
     if (tickRef.current) clearInterval(tickRef.current);
     tickRef.current = setInterval(() => {
@@ -192,11 +162,8 @@ export default function PomodoroTimer() {
           const rewardXP = prev.focusMin * 2;
           const rewardGold = Math.floor(prev.focusMin / 5);
           
-          // addEconomy({ xp: rewardXP, gold: rewardGold });
-          addEconomyToBackend(user?.id, { xp: rewardXP, gold: rewardGold }).then((success) => {
-            if (success) {
-              refreshUser();
-            }
+          updateEconomy(user?.id, { xp_delta: rewardXP, gold_delta: rewardGold }).then(() => {
+            refreshUser();
           });
           
           notify("Focus complete 🎉", `+${rewardXP} XP, +${rewardGold} Gold`);
@@ -228,8 +195,9 @@ export default function PomodoroTimer() {
       });
     }, 1000);
     return () => clearInterval(tickRef.current);
-  }, [s.running]);
+  }, [s.running]); // Run code when timer running state changes
 
+  // Set browser tab info (icon with current timer time)
   useEffect(() => {
     const base = titleBaseRef.current;
     const mmss = formatMMSS(s.secondsLeft);
@@ -240,7 +208,10 @@ export default function PomodoroTimer() {
     };
   }, [s.mode, s.secondsLeft]);
 
+  // Pause the timer
   const startPause = () => setS((x) => ({ ...x, running: !x.running }));
+
+  // Reset the timer
   const reset = () =>
     setS((x) => {
       const secs =
@@ -252,6 +223,7 @@ export default function PomodoroTimer() {
       return { ...x, running: false, secondsLeft: secs };
     });
 
+  // Return timer info of selected mode
   const toMode = (mode) =>
     setS((x) => {
       const mins =
@@ -265,6 +237,7 @@ export default function PomodoroTimer() {
       };
     });
 
+  // Get MM:SS formatted time as variable
   const mmss = formatMMSS(s.secondsLeft);
   const roundLabel =
     s.mode === "focus" ? `#${s.completedFocusRounds + 1}` : `#${s.completedFocusRounds}`;

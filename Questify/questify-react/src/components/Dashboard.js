@@ -167,6 +167,7 @@ export default function Dashboard() {
     extra: "Xtra Item",
   };
 
+  // Stat bonuses from equipeed gear
   const gearBonuses = useMemo(() => {
     const bonus = { STR: 0, DEX: 0, STAM: 0, INT: 0, WIS: 0, CHARM: 0 };
     Object.values(state.gear).forEach((id) => {
@@ -177,6 +178,7 @@ export default function Dashboard() {
     return bonus;
   }, [state.gear, state.items]);
 
+  // Total of stats plus bonus stats from equipped gear
   const totalStats = useMemo(() => {
     const res = { ...state.baseStats };
     for (const k in gearBonuses) res[k] = (res[k] || 0) + gearBonuses[k];
@@ -252,6 +254,7 @@ export default function Dashboard() {
     };
   }, [totalStats]);
 
+  // Configuration for stats radar chart
   const radarOptions = {
     responsive: true,
     maintainAspectRatio: true,

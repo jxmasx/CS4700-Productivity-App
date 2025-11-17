@@ -2,18 +2,20 @@ import React, { useEffect, useMemo, useState } from "react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import { useUser } from "../contexts/UserContext";
 import { readTasks, createTask, updateTask, deleteTask } from '../utils/TaskAPI.js'
-import { updateEconomy, updateRollover } from '../utils/EconAPI.js'
+import { updateEconomy } from '../utils/EconAPI.js'
+import { updateRollover } from '../utils/UserAPI.js'
 
-// const STORAGE_KEY = "qf_tasks_v1";
-// const ECON_KEY = "qf_economy_v1";
-
+// Colors for each task type
 const TYPE_COLORS = {
   Habit: { bg: "#cfe4ff", stripe: "#4b90ff" },
   Daily: { bg: "#cfeecf", stripe: "#46a546" },
   "To-Do": { bg: "#ffd6ea", stripe: "#ff5aa5" },
 };
 
+// Task difficulty order
 const DIFF_ORDER = ["Trivial", "Easy", "Medium", "Hard", "Epic"];
+
+// Task difficulty outcomes for gold, xp, and penalty
 const DIFFICULTY = {
   Trivial: { gold: 2, xp: 2, penalty: 1 },
   Easy: { gold: 5, xp: 5, penalty: 2 },
@@ -22,36 +24,12 @@ const DIFFICULTY = {
   Epic: { gold: 35, xp: 35, penalty: 18 },
 };
 
+// Return date (YYYY-MM-DD) from datetime
 function todayKey(d = new Date()) {
   return d.toISOString().slice(0, 10);
 }
 
-// function loadEconomy() {
-//   try {
-//     const raw = localStorage.getItem(ECON_KEY);
-//     if (raw) return JSON.parse(raw);
-//   } catch { }
-//   return { gold: 0, xp: 0, stats: { str: 0, cha: 0, dex: 0, wis: 0, int: 0 }, lastRollover: todayKey() };
-// }
-// function saveEconomy(e) {
-//   try { localStorage.setItem(ECON_KEY, JSON.stringify(e)); } catch { }
-// }
-
-// function loadTasks() {
-//   try {
-//     const raw = localStorage.getItem(STORAGE_KEY);
-//     if (raw) return JSON.parse(raw);
-//   } catch { }
-//   return [
-//     { id: "t1", title: "Read 10 pages", type: "Habit", dueAt: null, done: false, pomsDone: 0, pomsEstimate: 1, category: "CHA", difficulty: "Easy" },
-//     { id: "t2", title: "AM workout", type: "Daily", dueAt: null, done: false, pomsDone: 0, pomsEstimate: 1, category: "STR", difficulty: "Medium" },
-//     { id: "t3", title: "Finish dashboard layout", type: "To-Do", dueAt: null, done: false, pomsDone: 0, pomsEstimate: 3, category: "DEX", difficulty: "Hard" },
-//   ];
-// }
-// function saveTasks(tasks) {
-//   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks)); } catch { }
-// }
-
+// Format due date for task visual
 function fmtDue(dueAt) {
   if (!dueAt) return "";
   const d = new Date(dueAt);
@@ -61,141 +39,61 @@ function fmtDue(dueAt) {
   return (isOverdue ? "Overdue · " : "") + label;
 }
 
-// function applyReward(econ, task) {
-//   const diff = DIFFICULTY[task.difficulty] || DIFFICULTY.Easy;
-//   const statKey = (task.category || "").toLowerCase();
-//   const next = {
-//     ...econ,
-//     gold: Math.max(0, econ.gold + diff.gold),
-//     xp: Math.max(0, econ.xp + diff.xp),
-//     stats: { ...econ.stats },
-//   };
-//   if (["str", "dex", "cha", "wis", "int"].includes(statKey)) {
-//     next.stats[statKey] = Math.max(0, (next.stats[statKey] || 0) + 1);
-//   }
-//   return next;
-// }
-
-// Add reward to user account
-function applyReward(task) {
-  const diff = DIFFICULTY[task.difficulty] || DIFFICULTY.Easy;
+// Add, Remove, or give Penalty for tasks (gold, xp, stats)
+function econDelta(task, type) {
   const statKey = (task.category || "").toLowerCase();
-  const statMap = {
+  const diff = DIFFICULTY[task.difficulty] || DIFFICULTY.Easy;
+
+  // Map stat abbreviations to deltas
+  const STAT_MAP = {
     str: "strength_delta",
     dex: "dexterity_delta",
     int: "intelligence_delta",
     wis: "wisdom_delta",
     cha: "charisma_delta",
   };
-  
+
+  // Map types (add, revoke, penalty) to delta values
+  const TYPE_MAP = {
+    add: {
+      xp: diff.xp,
+      gold: diff.gold,
+      statChange: 1
+    },
+    revoke: {
+      xp: -diff.xp,
+      gold: -diff.gold,
+      statChange: -1
+    },
+    penalty: {
+      xp: -diff.penalty,
+      gold: -diff.penalty,
+      statChange: -1
+    }
+  }
+
+  // Set gold/xp deltas
   const deltas = {
-    xp_delta: diff.xp,
-    gold_delta: diff.gold,
+    xp_delta: TYPE_MAP[type].xp,
+    gold_delta: TYPE_MAP[type].gold,
     strength_delta: 0,
     dexterity_delta: 0,
     intelligence_delta: 0,
     wisdom_delta: 0,
     charisma_delta: 0,
   };
-  
-  if (statMap[statKey]) {
-    deltas[statMap[statKey]] = 1;
-  }
-  
-  return deltas;
-}
 
-// function revokeReward(econ, task) {
-//   const diff = DIFFICULTY[task.difficulty] || DIFFICULTY.Easy;
-//   const statKey = (task.category || "").toLowerCase();
-//   const next = {
-//     ...econ,
-//     gold: Math.max(0, econ.gold - diff.gold),
-//     xp: Math.max(0, econ.xp - diff.xp),
-//     stats: { ...econ.stats },
-//   };
-//   if (["str", "dex", "cha", "wis", "int"].includes(statKey)) {
-//     next.stats[statKey] = Math.max(0, (next.stats[statKey] || 0) - 1);
-//   }
-//   return next;
-// }
-
-// Remove reward from user account
-function revokeReward(task) {
-  const diff = DIFFICULTY[task.difficulty] || DIFFICULTY.Easy;
-  const statKey = (task.category || "").toLowerCase();
-  const statMap = {
-    str: "strength_delta",
-    dex: "dexterity_delta",
-    int: "intelligence_delta",
-    wis: "wisdom_delta",
-    cha: "charisma_delta",
-  };
-  
-  const deltas = {
-    xp_delta: -diff.xp,
-    gold_delta: -diff.gold,
-    strength_delta: 0,
-    dexterity_delta: 0,
-    intelligence_delta: 0,
-    wisdom_delta: 0,
-    charisma_delta: 0,
-  };
-  
-  if (statMap[statKey]) {
-    deltas[statMap[statKey]] = -1;
+  // Set stat deltas (charm, strength, etc.)
+  if (STAT_MAP[statKey]) {
+    deltas[STAT_MAP[statKey]] = TYPE_MAP[type].statChange;
   }
-  
-  return deltas;
-}
-// function applyMissPenalty(econ, task) {
-//   const diff = DIFFICULTY[task.difficulty] || DIFFICULTY.Easy;
-//   const statKey = (task.category || "").toLowerCase();
-//   const next = {
-//     ...econ,
-//     gold: Math.max(0, econ.gold - diff.penalty),
-//     xp: Math.max(0, econ.xp - diff.penalty),
-//     stats: { ...econ.stats },
-//   };
-//   if (["str", "dex", "cha", "wis", "int"].includes(statKey)) {
-//     next.stats[statKey] = Math.max(0, (next.stats[statKey] || 0) - 1);
-//   }
-//   return next;
-// }
 
-// Apply penalty for missing a task
-function applyMissPenalty(task) {
-  const diff = DIFFICULTY[task.difficulty] || DIFFICULTY.Easy;
-  const statKey = (task.category || "").toLowerCase();
-  const statMap = {
-    str: "strength_delta",
-    dex: "dexterity_delta",
-    int: "intelligence_delta",
-    wis: "wisdom_delta",
-    cha: "charisma_delta",
-  };
-  
-  const deltas = {
-    xp_delta: -diff.penalty,
-    gold_delta: -diff.penalty,
-    strength_delta: 0,
-    dexterity_delta: 0,
-    intelligence_delta: 0,
-    wisdom_delta: 0,
-    charisma_delta: 0,
-  };
-  
-  if (statMap[statKey]) {
-    deltas[statMap[statKey]] = -1;
-  }
-  
   return deltas;
 }
 
 export default function TaskBoard() {
   const { user, refreshUser } = useUser();
 
-  // const [economy, setEconomy] = useState(loadEconomy);
   const [tasks, setTasks] = useState([]);
   const rolloverInProgress = React.useRef(false);
 
@@ -212,7 +110,7 @@ export default function TaskBoard() {
   const [showEdit, setShowEdit] = useState(false);
   const [editForm, setEditForm] = useState(null);
 
-  // useEffect(() => { saveTasks(tasks); }, [tasks]);
+  // Get tasks from backend and apply them to tasks state
   useEffect(() => {
     async function fetchTasks() {
       if (user && user.id) {
@@ -227,42 +125,15 @@ export default function TaskBoard() {
     fetchTasks();
   }, [user]);
 
-
-  // useEffect(() => {
-  //   const doRolloverIfNeeded = () => {
-  //     const today = todayKey();
-  //     if (economy.lastRollover === today) return;
-  //
-  //     let econ = { ...economy };
-  //     let nextTasks = tasks;
-  //
-  //     tasks.forEach(t => {
-  //       if (t.type === "Daily" && !t.done) {
-  //         econ = applyMissPenalty(econ, t);
-  //       }
-  //     });
-  //     nextTasks = nextTasks.map(t => (t.type === "Daily" ? { ...t, done: false } : t));
-  //
-  //     econ.lastRollover = today;
-  //     setEconomy(econ);
-  //     setTasks(nextTasks);
-  //     window.dispatchEvent(new Event("calendar:refresh"));
-  //   };
-  //
-  //   doRolloverIfNeeded();
-  //   const iv = setInterval(doRolloverIfNeeded, 60 * 1000);
-  //   return () => clearInterval(iv);
-  // }, [economy.lastRollover, tasks]);
-
-// Rollover from backennd
+  // Rollover from backennd
   useEffect(() => {
     const doRolloverIfNeeded = async () => {
       if (!user || !user.id || !tasks.length) return;
       if (rolloverInProgress.current) return;
-      
+
       const today = todayKey();
       const lastRollover = user.last_rollover;
-      
+
       if (lastRollover === today) return;
 
       rolloverInProgress.current = true;
@@ -271,7 +142,7 @@ export default function TaskBoard() {
         let penalties = [];
         tasks.forEach(t => {
           if (t.type === "Daily" && !t.done) {
-            penalties.push(applyMissPenalty(t));
+            penalties.push(econDelta(t, "penalty"));
           }
         });
 
@@ -286,7 +157,7 @@ export default function TaskBoard() {
             wisdom_delta: acc.wisdom_delta + p.wisdom_delta,
             charisma_delta: acc.charisma_delta + p.charisma_delta,
           }), { xp_delta: 0, gold_delta: 0, strength_delta: 0, dexterity_delta: 0, intelligence_delta: 0, wisdom_delta: 0, charisma_delta: 0 });
-          
+
           await updateEconomy(user.id, totalDeltas);
         }
 
@@ -301,10 +172,10 @@ export default function TaskBoard() {
 
         // Update last_rollover in database
         await updateRollover(user.id);
-        
+
         // Refresh user data to get updated last_rollover
         await refreshUser();
-        
+
         window.dispatchEvent(new Event("calendar:refresh"));
       } finally {
         rolloverInProgress.current = false;
@@ -314,6 +185,7 @@ export default function TaskBoard() {
     doRolloverIfNeeded();
   }, [user?.id, tasks.length]);
 
+  // Adds event listener to when pomodoro timer completes, updates tasks
   useEffect(() => {
     const onPomComplete = (e) => {
       const doneId = e?.detail?.id;
@@ -326,6 +198,7 @@ export default function TaskBoard() {
     return () => window.removeEventListener("pomodoro:complete", onPomComplete);
   }, []);
 
+  // When finished dragging a task to new position
   const onDragEnd = (result) => {
     if (!result.destination) return;
     const next = Array.from(tasks);
@@ -346,6 +219,7 @@ export default function TaskBoard() {
     setShowAdd(true);
   };
 
+  // Add new task to taskboard
   const saveAdd = () => {
     const due = addForm.dueAtLocal ? new Date(addForm.dueAtLocal + "T00:00:00") : null;
     const t = {
@@ -365,50 +239,36 @@ export default function TaskBoard() {
     window.dispatchEvent(new Event("calendar:refresh"));
   };
 
+  // Used when focusing a specific task in the pomodoro timer
   const focusInPomodoro = (task) => {
     if (!task) return;
     window.dispatchEvent(new CustomEvent("pomodoro:setTask", { detail: { id: task.id, title: task.title } }));
   };
 
-  // const toggleDone = (id) => {
-  //   setTasks((prev) => {
-  //     let econ = { ...economy };
-  //     const next = prev.map((t) => {
-  //       if (t.id !== id) return t;
-  //       const nowDone = !t.done;
-  //       if (nowDone) econ = applyReward(econ, t);
-  //       else econ = revokeReward(econ, t);
-  //       const newData = { ...t, done: nowDone }
-  //       updateTask(user.id, id, newData)
-  //       return newData;
-  //     });
-  //     setEconomy(econ);
-  //     return next;
-  //   });
-  // };
-
-  // Toggle task as done with economy
+  // Toggle task done (checkbox)
   const toggleDone = async (id) => {
     const task = tasks.find(t => t.id === id);
     if (!task || !user || !user.id) return;
 
+    // Add or Remove gold, xp, stats from user economy when task complete/undo complete
     const nowDone = !task.done;
-    const deltas = nowDone ? applyReward(task) : revokeReward(task);
-    
+    const deltas = nowDone ? econDelta(task, "add") : econDelta(task, "revoke");
+
     // Update backend economy
     await updateEconomy(user.id, deltas);
-    
+
     // Update task
     const newData = { ...task, done: nowDone };
     await updateTask(user.id, id, newData);
-    
+
     // Update local state
     setTasks((prev) => prev.map((t) => (t.id === id ? newData : t)));
-    
+
     // Refresh user data to update stats in Dashboard
     await refreshUser();
   };
 
+  // Button pressed to edit a task
   const openEdit = (id) => {
     const t = tasks.find((x) => x.id === id);
     if (!t) return;
@@ -419,6 +279,7 @@ export default function TaskBoard() {
     setShowEdit(true);
   };
 
+  // Save edited task
   const saveEdit = () => {
     if (!editForm) return;
     setTasks(prev => prev.map(t => {
@@ -441,12 +302,14 @@ export default function TaskBoard() {
     window.dispatchEvent(new Event("calendar:refresh"));
   };
 
+  // Remove task from taskboard
   const removeTask = (id) => {
     if (!window.confirm("Delete this task?")) return;
     setTasks(prev => prev.filter(t => t.id !== id));
     deleteTask(user.id, id)
   };
 
+  // Updates the Habit, Daily, To-Do counts on Dashboard
   const counts = useMemo(() => {
     const c = { Habit: 0, Daily: 0, "To-Do": 0 };
     tasks.forEach((t) => (c[t.type] += 1));
