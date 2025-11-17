@@ -6,6 +6,7 @@ import CalendarView from "./CalendarView";
 import PomodoroTimer from "./PomodoroTimer";
 import ConnectCalendarModal from "./ConnectCalendarModal";
 import QuestifyNavBar from "./QuestifyNavBar";
+import QuestList from "./QuestList"
 import { API } from "../apiBase";
 
 import {
@@ -316,6 +317,12 @@ export default function Dashboard() {
                   Task List
                 </button>
                 <button
+                  className={`tab ${taskTab === "quests" ? "active" : ""}`}
+                  onClick={() => setTaskTab("quests")}
+                >
+                  Quests
+                </button>
+                <button
                   className={`tab ${taskTab === "calendar" ? "active" : ""}`}
                   onClick={() => setTaskTab("calendar")}
                 >
@@ -336,6 +343,8 @@ export default function Dashboard() {
               </div>
 
               {taskTab === "list" && <TaskBoard />}
+
+              {taskTab === "quests" && <QuestList />}
 
               {taskTab === "calendar" && (
                 <>

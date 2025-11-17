@@ -6,16 +6,11 @@
       * Marks quest as completed in localStorage ("questStatus").
       * Adds a reward into "pendingRewards" so GuildHall can pay it out.
       * Calls onQuestCompleted (Dashboard can add XP/Gold immediately).
-
- Stores in LOCALSTORAGE: WILL NEED TO BE CHANGED
-    - "pendingRewards" -> read by GuildHall
-    - "questStatus"    -> map of questId -> { completed, completedAt }
  -----------------------------------------------------------------------------*/
 
-import React, { useEffect, useState } from "react";
-
-const PENDING_REWARDS_KEY = "pendingRewards";
-const QUEST_STATUS_KEY = "questStatus";
+import React, { useState } from "react";
+import { useUser } from "../contexts/UserContext"
+import { addPendingReward, updateUserQuest } from "../utils/QuestAPI"
 
 const QuestCard = ({
   visible = true,
@@ -23,52 +18,39 @@ const QuestCard = ({
   label = "Starter Quest: Complete your first habit",
   rewardGold = 5,
   rewardXp = 10,
+  statusMessage = "Quest completed!",
   onQuestCompleted,
+  userQuestId = null,
 }) => {
+  const { user } = useUser();
+
   const [isCompleted, setIsCompleted] = useState(false);
   const [showBanner, setShowBanner] = useState(false);
-  const [statusMessage, setStatusMessage] = useState("");
+  const [bannerMessage, setBannerMessage] = useState("");
 
-  /*Loads quest completion status from localStorage on mount*/
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem(QUEST_STATUS_KEY);
-      if (!raw) return;
-      const map = JSON.parse(raw);
-      if (map && map[questId]?.completed) {
-        setIsCompleted(true);
+  // Set the status of quest (complete/incomplete)
+  const saveQuestStatus = async (completed) => {
+    if (userQuestId && user?.id) {
+      try {
+        await updateUserQuest(user.id, userQuestId, completed);
+      } catch (error) {
+        console.error('Failed to update quest status:', error);
       }
-    } catch {
-      setIsCompleted(false);
-    }
-  }, [questId]);
-
-  const saveQuestStatus = (completed) => {
-    try {
-      const raw = localStorage.getItem(QUEST_STATUS_KEY);
-      const map = raw ? JSON.parse(raw) : {};
-      map[questId] = {
-        completed,
-        completedAt: completed ? Date.now() : undefined,
-      };
-      localStorage.setItem(QUEST_STATUS_KEY, JSON.stringify(map));
-    } catch {
-      /*Ignore write errors*/
     }
   };
 
+  // Add pending reward to guild hall for completing the quest
   const enqueueRewardForGuildHall = () => {
     try {
-      const raw = localStorage.getItem(PENDING_REWARDS_KEY);
-      const existing = raw ? JSON.parse(raw) : [];
       const newReward = {
         id: questId,
         label,
         gold: rewardGold,
         xp: rewardXp,
       };
-      const updated = [...existing, newReward];
-      localStorage.setItem(PENDING_REWARDS_KEY, JSON.stringify(updated));
+
+      addPendingReward(user.id, newReward)
+
     } catch {
       /*Ignores errors; UI will still shows completion*/
     }
@@ -83,9 +65,7 @@ const QuestCard = ({
     saveQuestStatus(true);
     enqueueRewardForGuildHall();
     setShowBanner(true);
-    setStatusMessage(
-      "You defended the Hall of Habits. The smog retreats… for now."
-    );
+    setBannerMessage(statusMessage);
 
     if (typeof onQuestCompleted === "function") {
       onQuestCompleted();
@@ -101,9 +81,9 @@ const QuestCard = ({
     - If Dashboard says `visible={false}`, doesn’t render at all.
     - If the quest is already completed, hides the card completely.
   */
-  if (!visible || isCompleted) {
-    return null;
-  }
+  // if (!visible || isCompleted) {
+  //   return null;
+  // }
 
   return (
     <div
@@ -244,7 +224,7 @@ const QuestCard = ({
             boxShadow: "0 4px 12px rgba(0,0,0,.35)",
           }}
         >
-          {statusMessage}
+          {bannerMessage}
         </div>
       )}
     </div>

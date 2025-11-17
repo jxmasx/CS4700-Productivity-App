@@ -19,6 +19,7 @@ import AdventurerNamePlate from "./AdventurerNamePlate";
 import QuestifyNavBar from "./QuestifyNavBar";
 import { useUser } from "../contexts/UserContext";
 import { updateEconomy } from "../utils/EconAPI";
+import { deletePendingReward, deletePendingRewards, getPendingRewards } from "../utils/QuestAPI"
 
 
 /*Default stock in the Guild Shop.*/
@@ -53,7 +54,7 @@ const DEFAULT_SHOP_ITEMS = [
 const LOCAL_KEYS = {
   // GOLD: "adventurerGold",
   INVENTORY: "adventurerInventory",
-  PENDING: "pendingRewards",
+  // PENDING: "pendingRewards",
 };
 
 const GuildHall = () => {
@@ -66,7 +67,7 @@ const GuildHall = () => {
   ---------------------------------------------------------------------------*/
   const [gold, setGold] = useState(0);
 
-  /*Loads gold from user context*/
+  /* Loads gold from user context/backend */
   useEffect(() => {
     if (user) {
       setGold(user.gold ?? 0);
@@ -96,19 +97,34 @@ const GuildHall = () => {
   ---------------------------------------------------------------------------*/
   const [pendingRewards, setPendingRewards] = useState([]);
 
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem(LOCAL_KEYS.PENDING);
-      if (raw) setPendingRewards(JSON.parse(raw));
-    } catch {
-      setPendingRewards([]);
-    }
-  }, []);
+  // useEffect(() => {
+  //   try {
+  //     const raw = localStorage.getItem(LOCAL_KEYS.PENDING);
+  //     if (raw) setPendingRewards(JSON.parse(raw));
+  //   } catch {
+  //     setPendingRewards([]);
+  //   }
+  // }, []);
 
-  const savePendingRewards = (next) => {
-    setPendingRewards(next);
-    localStorage.setItem(LOCAL_KEYS.PENDING, JSON.stringify(next));
-  };
+  useEffect(() => {
+    async function fetchPendingRewards() {
+      try {
+        const rewards = await getPendingRewards(user.id);
+        setPendingRewards(Array.isArray(rewards) ? rewards : []);
+      } catch (error) {
+        console.error('Error fetching pending rewards:', error);
+        setPendingRewards([]);
+      }
+    }
+    if (user?.id) {
+      fetchPendingRewards();
+    }
+  }, [user]);
+
+  // const savePendingRewards = (next) => {
+  //   setPendingRewards(next);
+  //   localStorage.setItem(LOCAL_KEYS.PENDING, JSON.stringify(next));
+  // };
 
   /* ---------------------------------------------------------------------------
    REFRESH USER AFTER SETTINGS STATES
@@ -138,10 +154,7 @@ const GuildHall = () => {
     });
 
     if (result) {
-      /*2)Update local gold state*/
-      setGold((prev) => prev + goldDelta);
-
-      /*3)Logs reward in inventory for "flavor"*/
+      /*2)Logs reward in inventory for "flavor"*/
       setInventory((items) => [
         ...items,
         {
@@ -152,10 +165,11 @@ const GuildHall = () => {
         },
       ]);
 
-      /*4)Removes from pending*/
-      savePendingRewards(pendingRewards.filter((r) => r.id !== rewardId));
+      /*3)Removes from pending*/
+      deletePendingReward(user.id, rewardId)
+      // savePendingRewards(pendingRewards.filter((r) => r.id !== rewardId));
 
-      /*5)Refresh user data to sync with backend*/
+      /*4)Refresh user data to sync with backend*/
       refreshUser();
     }
   };
@@ -179,10 +193,7 @@ const GuildHall = () => {
     });
 
     if (result) {
-      /*2)Update local gold state*/
-      setGold((prev) => prev + totalGold);
-
-      /*3)Add all rewards to inventory*/
+      /*2)Add all rewards to inventory*/
       setInventory((items) => [
         ...items,
         ...pendingRewards.map((r) => ({
@@ -193,10 +204,10 @@ const GuildHall = () => {
         })),
       ]);
 
-      /*4)Clear pending rewards*/
-      savePendingRewards([]);
+      /*3)Clear pending rewards*/
+      deletePendingRewards(user.id)
 
-      /*5)Refresh user data to sync with backend*/
+      /*4)Refresh user data to sync with backend*/
       refreshUser();
     }
   };
@@ -217,10 +228,7 @@ const GuildHall = () => {
     const result = await updateEconomy(user.id, { gold_delta: goldDelta });
 
     if (result) {
-      /*2)Update local gold state optimistically*/
-      setGold((prev) => prev - item.cost);
-
-      /*3)Add item to inventory*/
+      /*2)Add item to inventory*/
       setInventory((items) => [
         ...items,
         {
@@ -230,7 +238,7 @@ const GuildHall = () => {
         },
       ]);
 
-      /*4)Refresh user data to sync with backend*/
+      /*3)Refresh user data to sync with backend*/
       refreshUser();
     }
   };
@@ -253,10 +261,7 @@ const GuildHall = () => {
     const result = await updateEconomy(user.id, { gold_delta: goldDelta });
 
     if (result) {
-      /*2)Update local gold state*/
-      setGold((prev) => prev - cost);
-
-      /*3)Add custom reward to inventory*/
+      /*2)Add custom reward to inventory*/
       setInventory((items) => [
         ...items,
         {
@@ -267,11 +272,11 @@ const GuildHall = () => {
         },
       ]);
 
-      /*4)Reset form*/
+      /*3)Reset form*/
       setCustomName("");
       setCustomCost(10);
 
-      /*5)Refresh user data to sync with backend*/
+      /*4)Refresh user data to sync with backend*/
       refreshUser();
     }
   };

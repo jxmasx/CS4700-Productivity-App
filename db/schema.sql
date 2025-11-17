@@ -1,5 +1,5 @@
 --
--- File generated with SQLiteStudio v3.4.17 on Sat Nov 15 14:20:38 2025
+-- File generated with SQLiteStudio v3.4.17 on Mon Nov 17 18:19:00 2025
 --
 -- Text encoding used: System
 --
@@ -80,6 +80,9 @@ CREATE TABLE IF NOT EXISTS narrative_events (
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+-- Table: pending_rewards
+CREATE TABLE IF NOT EXISTS pending_rewards (id TEXT PRIMARY KEY NOT NULL, user_id INTEGER NOT NULL, label TEXT, gold INTEGER NOT NULL, xp INTEGER NOT NULL);
+
 -- Table: quest_logs
 CREATE TABLE IF NOT EXISTS quest_logs (
   id         INTEGER PRIMARY KEY,
@@ -92,37 +95,8 @@ CREATE TABLE IF NOT EXISTS quest_logs (
   hp_delta   INTEGER NOT NULL DEFAULT 0
 );
 
--- Table: quest_search
-CREATE VIRTUAL TABLE IF NOT EXISTS quest_search USING fts5(title, notes, content='quests', content_rowid='id');
-
--- Table: quest_search_config
-CREATE TABLE IF NOT EXISTS 'quest_search_config'(k PRIMARY KEY, v) WITHOUT ROWID;
-
--- Table: quest_search_data
-CREATE TABLE IF NOT EXISTS 'quest_search_data'(id INTEGER PRIMARY KEY, block BLOB);
-
--- Table: quest_search_docsize
-CREATE TABLE IF NOT EXISTS 'quest_search_docsize'(id INTEGER PRIMARY KEY, sz BLOB);
-
--- Table: quest_search_idx
-CREATE TABLE IF NOT EXISTS 'quest_search_idx'(segid, term, pgno, PRIMARY KEY(segid, term)) WITHOUT ROWID;
-
 -- Table: quests
-CREATE TABLE IF NOT EXISTS quests (
-  id            INTEGER PRIMARY KEY,
-  user_id       INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  title         TEXT NOT NULL,
-  type          TEXT NOT NULL CHECK (type IN ('habit','daily','todo')),
-  rank          TEXT NOT NULL DEFAULT 'E' CHECK (rank IN ('E','D','C','B','A','S')),
-  notes         TEXT,
-  tags          TEXT DEFAULT '[]',
-  due_at        TEXT,
-  repeats_rule  TEXT,
-  difficulty    INTEGER NOT NULL DEFAULT 2,
-  is_negative   INTEGER NOT NULL DEFAULT 0,
-  is_active     INTEGER NOT NULL DEFAULT 1,
-  created_at    TEXT NOT NULL DEFAULT (datetime('now'))
-);
+CREATE TABLE IF NOT EXISTS quests (id TEXT PRIMARY KEY NOT NULL, label TEXT NOT NULL, reward_xp INTEGER NOT NULL, reward_gold INTEGER, status_message TEXT);
 
 -- Table: shop_items
 CREATE TABLE IF NOT EXISTS shop_items (
@@ -144,14 +118,6 @@ CREATE TABLE IF NOT EXISTS streaks (
   PRIMARY KEY (user_id, quest_id)
 );
 
--- Table: subquests
-CREATE TABLE IF NOT EXISTS subquests (
-  id        INTEGER PRIMARY KEY,
-  quest_id  INTEGER NOT NULL REFERENCES quests(id) ON DELETE CASCADE,
-  title     TEXT NOT NULL,
-  is_done   INTEGER NOT NULL DEFAULT 0
-);
-
 -- Table: tasks
 CREATE TABLE IF NOT EXISTS tasks (id TEXT PRIMARY KEY NOT NULL, user_id INTEGER NOT NULL REFERENCES users (id) ON DELETE CASCADE, title TEXT NOT NULL, type TEXT NOT NULL CHECK (type IN ('Habit', 'Daily', 'To-Do')), category TEXT NOT NULL, difficulty TEXT NOT NULL, due_at TEXT, done INTEGER NOT NULL, poms_done INTEGER, poms_estimate INTEGER);
 
@@ -170,6 +136,9 @@ CREATE TABLE IF NOT EXISTS user_passwords (
             FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
           );
 
+-- Table: user_quests
+CREATE TABLE IF NOT EXISTS user_quests (id INTEGER PRIMARY KEY UNIQUE NOT NULL, user_id INTEGER NOT NULL REFERENCES users (id), quest_id TEXT NOT NULL REFERENCES quests (id), is_done INTEGER NOT NULL DEFAULT (0), completed_at TEXT NOT NULL);
+
 -- Table: users
 CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, email TEXT UNIQUE NOT NULL, display_name TEXT NOT NULL, created_at TEXT NOT NULL DEFAULT (datetime('now')), level INTEGER NOT NULL DEFAULT 1, xp INTEGER NOT NULL DEFAULT 0, xp_max INTEGER NOT NULL DEFAULT (100), hp INTEGER NOT NULL DEFAULT 100, mana INTEGER NOT NULL DEFAULT 50, gold INTEGER NOT NULL DEFAULT 0, diamonds INTEGER NOT NULL DEFAULT 0, guild_rank TEXT NOT NULL DEFAULT 'Bronze', guild_streak INTEGER NOT NULL DEFAULT (0), strength INTEGER NOT NULL DEFAULT (0), dexterity INTEGER NOT NULL DEFAULT (0), intelligence INTEGER NOT NULL DEFAULT (0), wisdom INTEGER NOT NULL DEFAULT (0), charisma INTEGER NOT NULL DEFAULT (0), user_class TEXT NOT NULL DEFAULT Classless, last_rollover TEXT);
 
@@ -185,24 +154,14 @@ CREATE INDEX IF NOT EXISTS idx_ledger_user_time ON economy_ledger(user_id, creat
 -- Index: idx_quest_logs_user_time
 CREATE INDEX IF NOT EXISTS idx_quest_logs_user_time ON quest_logs(user_id, logged_at);
 
--- Index: idx_quests_user_type
-CREATE INDEX IF NOT EXISTS idx_quests_user_type ON quests(user_id, type);
-
 -- Trigger: quests_ad
-CREATE TRIGGER IF NOT EXISTS quests_ad AFTER DELETE ON quests BEGIN
-  INSERT INTO quest_search(quest_search, rowid, title, notes) VALUES('delete', old.id, old.title, old.notes);
-END;
+CREATE TRIGGER IF NOT EXISTS quests_ad AFTER DELETE ON quests BEGIN INSERT INTO quest_search (quest_search, rowid, title, notes) VALUES ('delete', old.id, old.title, old.notes); END;
 
 -- Trigger: quests_ai
-CREATE TRIGGER IF NOT EXISTS quests_ai AFTER INSERT ON quests BEGIN
-  INSERT INTO quest_search(rowid, title, notes) VALUES (new.id, new.title, new.notes);
-END;
+CREATE TRIGGER IF NOT EXISTS quests_ai AFTER INSERT ON quests BEGIN INSERT INTO quest_search (rowid, title, notes) VALUES (new.id, new.title, new.notes); END;
 
 -- Trigger: quests_au
-CREATE TRIGGER IF NOT EXISTS quests_au AFTER UPDATE ON quests BEGIN
-  INSERT INTO quest_search(quest_search, rowid, title, notes) VALUES('delete', old.id, old.title, old.notes);
-  INSERT INTO quest_search(rowid, title, notes) VALUES (new.id, new.title, new.notes);
-END;
+CREATE TRIGGER IF NOT EXISTS quests_au AFTER UPDATE ON quests BEGIN INSERT INTO quest_search (quest_search, rowid, title, notes) VALUES ('delete', old.id, old.title, old.notes); INSERT INTO quest_search (rowid, title, notes) VALUES (new.id, new.title, new.notes); END;
 
 COMMIT TRANSACTION;
 PRAGMA foreign_keys = on;
