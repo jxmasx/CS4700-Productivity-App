@@ -154,14 +154,5 @@ CREATE INDEX IF NOT EXISTS idx_ledger_user_time ON economy_ledger(user_id, creat
 -- Index: idx_quest_logs_user_time
 CREATE INDEX IF NOT EXISTS idx_quest_logs_user_time ON quest_logs(user_id, logged_at);
 
--- Trigger: quests_ad
-CREATE TRIGGER IF NOT EXISTS quests_ad AFTER DELETE ON quests BEGIN INSERT INTO quest_search (quest_search, rowid, title, notes) VALUES ('delete', old.id, old.title, old.notes); END;
-
--- Trigger: quests_ai
-CREATE TRIGGER IF NOT EXISTS quests_ai AFTER INSERT ON quests BEGIN INSERT INTO quest_search (rowid, title, notes) VALUES (new.id, new.title, new.notes); END;
-
--- Trigger: quests_au
-CREATE TRIGGER IF NOT EXISTS quests_au AFTER UPDATE ON quests BEGIN INSERT INTO quest_search (quest_search, rowid, title, notes) VALUES ('delete', old.id, old.title, old.notes); INSERT INTO quest_search (rowid, title, notes) VALUES (new.id, new.title, new.notes); END;
-
 COMMIT TRANSACTION;
 PRAGMA foreign_keys = on;
