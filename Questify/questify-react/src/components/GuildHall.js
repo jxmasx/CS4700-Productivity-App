@@ -335,7 +335,7 @@ const GuildHall = () => {
             }
             level={user?.level ?? 1}
             actionLabel="Return to Dashboard"
-            onAction={() => navigate("/")}
+            onAction={() => navigate("/dashboard")}
           />
         </div>
 
