@@ -3,6 +3,7 @@ from pydantic import BaseModel
 from sqlalchemy import Column, Integer, String
 from sqlalchemy.orm import Session
 from db import get_db, Base
+from typing import Optional
 
 router = APIRouter(prefix="/api", tags=["qcalendar"])
 
@@ -13,8 +14,8 @@ class CalendarItem(Base):
     store_tasks = Column(String)
     
 class CalendarInfo(BaseModel):
-    store_local_events: str
-    store_tasks: str
+    store_local_events: Optional[str] = None
+    store_tasks: Optional[str] = None
     
     class Config:
         from_attributes = True
@@ -49,8 +50,11 @@ async def update_calendar(user_id: int, info: CalendarInfo, db: Session = Depend
     if not item:
         raise HTTPException(status_code=404, detail="Calendar not found")
     
-    item.store_local_events = info.store_local_events
-    item.store_tasks = info.store_tasks
+    # Only update fields that are provided
+    if info.store_local_events is not None:
+        item.store_local_events = info.store_local_events
+    if info.store_tasks is not None:
+        item.store_tasks = info.store_tasks
     
     try:
         db.commit()
