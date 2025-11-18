@@ -345,11 +345,11 @@ export default function Dashboard() {
               {taskTab === "calendar" && (
                 <>
                   <CalendarView />
-                  <IntegrationsPopupModal
+                  {/* <IntegrationsPopupModal
                     isOpen={showIntegrations}
                     onClose={() => setShowIntegrations(false)}
                     onConnected={handleIntegrationsConnected}
-                  />
+                  /> */}
                 </>
               )}
 

@@ -243,7 +243,10 @@ export default function CalendarView({ date = new Date() }) {
 
   useEffect(() => {
     const api = calRef.current?.getApi();
-    if (api) api.gotoDate(currentDate);
+    const currentApiDate = api?.getDate();
+    if (api && currentApiDate && currentApiDate.getTime() !== currentDate.getTime()) {
+      api.gotoDate(currentDate);
+    }
   }, [currentDate]);
 
   const handleSelect = (selInfo) => {
@@ -474,8 +477,9 @@ export default function CalendarView({ date = new Date() }) {
           initialView={view}
           initialDate={currentDate}
           datesSet={(arg) => {
-            setView(arg.view.type);
-            setCurrentDate(arg.start);
+            if (arg.view.type !== view) {
+              setView(arg.view.type);
+            }
           }}
           headerToolbar={false}
           height="auto"
