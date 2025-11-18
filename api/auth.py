@@ -8,7 +8,7 @@ from sqlalchemy import Column, Integer, String, BLOB
 from sqlalchemy.orm import Session
 import logging
 
-from tasks import TaskItem
+from quests import UserQuestItem, QuestItem
 
 router = APIRouter(prefix="/api", tags=["auth"])
 
@@ -110,6 +110,28 @@ async def create_item(item: SignupIn, db: Session = Depends(get_db)):
 
         pass_item = PassItem(user_id=db_item.id, pass_hash=pass_hash)
         db.add(pass_item)
+        
+        # ADD STARTER QUEST, FIND BETTER WAY TO DO THIS
+        starter_quest_id = "starter-quest-first-habit"
+        starter_quest = db.query(QuestItem).filter(QuestItem.id == starter_quest_id).first()
+        if not starter_quest:
+            starter_quest = QuestItem(
+                id=starter_quest_id,
+                label="Starter Quest: Complete your first habit",
+                reward_xp=10,
+                reward_gold=5,
+                status_message="You defended the Hall of Habits. The smog retreats… for now."
+            )
+            db.add(starter_quest)
+            db.flush()
+        
+        user_quest = UserQuestItem(
+            user_id=db_item.id,
+            quest_id=starter_quest_id,
+            is_done=0,
+            completed_at=""
+        )
+        db.add(user_quest)
         
         db.commit()
         db.refresh(db_item)

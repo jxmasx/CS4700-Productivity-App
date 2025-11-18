@@ -11,20 +11,16 @@ export default function QuestList() {
     useEffect(() => {
         const fetchQuests = async () => {
             if (!user?.id) {
-                console.log("No user ID, skipping quest fetch");
                 return;
             }
 
-            console.log("Fetching quests for user:", user.id);
             try {
                 const userQuests = await getUserQuests(user.id);
-                console.log("User quests fetched:", userQuests);
 
                 // Get all user quests
                 const allUserQuests = await Promise.all(
                     (userQuests || []).map(async (userQuest) => {
                         const questData = await getQuest(userQuest.quest_id);
-                        console.log(`Quest data for ${userQuest.quest_id}:`, questData);
                         return {
                             quest_id: userQuest.quest_id,
                             quest_name: questData?.label || "Unknown Quest",
@@ -37,7 +33,6 @@ export default function QuestList() {
                     })
                 );
                 
-                console.log("All quests processed:", allUserQuests);
                 setQuests(allUserQuests);
             } catch (error) {
                 console.log("Error fetching quests:", error)

@@ -32,16 +32,11 @@ export async function createQuest(questData) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(questData)
     });
-    if (!response.ok) {
-      const error = await response.json();
-      console.error('Create quest failed:', response.status, error);
-      throw new Error(`Failed to create quest: ${JSON.stringify(error)}`);
-    }
     const data = await response.json();
     return data;
   } catch (error) {
     console.error('Error creating quest:', error);
-    throw error;
+    return null;
   }
 }
 
@@ -65,16 +60,11 @@ export async function assignQuestToUser(user_id, questData) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(questData)
     });
-    if (!response.ok) {
-      const error = await response.json();
-      console.error('Assign quest failed:', response.status, error);
-      throw new Error(`Failed to assign quest: ${JSON.stringify(error)}`);
-    }
     const data = await response.json();
     return data;
   } catch (error) {
     console.error('Error assigning quest to user:', error);
-    throw error;
+    return null;
   }
 }
 
