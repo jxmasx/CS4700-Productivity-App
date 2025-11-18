@@ -41,30 +41,31 @@ const QuestCard = ({
   };
 
   // Add pending reward to guild hall for completing the quest
-  const enqueueRewardForGuildHall = () => {
+  const enqueueRewardForGuildHall = async () => {
     try {
       const newReward = {
         id: questId,
+        user_id: user.id,
         label,
         gold: rewardGold,
         xp: rewardXp,
       };
 
-      addPendingReward(user.id, newReward)
+      await addPendingReward(user.id, newReward)
 
-    } catch {
-      /*Ignores errors; UI will still shows completion*/
+    } catch (error) {
+      console.error('Failed to add pending reward:', error);
     }
   };
 
-  const handleCheckboxChange = (e) => {
+  const handleCheckboxChange = async (e) => {
     const checked = e.target.checked;
     /*Only react to going from unchecked -> checked, and only once.*/
     if (!checked || isCompleted) return;
 
     setIsCompleted(true);
-    saveQuestStatus(true);
-    enqueueRewardForGuildHall();
+    await saveQuestStatus(true);
+    await enqueueRewardForGuildHall();
     setShowBanner(true);
     setBannerMessage(statusMessage);
 
