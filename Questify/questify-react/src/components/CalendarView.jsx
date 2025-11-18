@@ -198,6 +198,7 @@ export default function CalendarView({ date = new Date() }) {
   const [eventsFetched, setEventsFetched] = useState([]);
   const [eventsLocal, setEventsLocal] = useState([]);
   const [tasks, setTasks] = useState([]);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   const [showAdd, setShowAdd] = useState(false);
   const [addForm, setAddForm] = useState({
@@ -254,6 +255,7 @@ export default function CalendarView({ date = new Date() }) {
       const taskData = await loadTasks(user.id);
       setEventsLocal(events);
       setTasks(taskData);
+      setIsInitialLoad(false);
     }
     loadLocalData();
   }, [user?.id]);
@@ -280,10 +282,10 @@ export default function CalendarView({ date = new Date() }) {
 
   /*persists local events*/
   useEffect(() => {
-    if (user?.id) {
+    if (user?.id && !isInitialLoad) {
       saveLocalEvents(eventsLocal, user.id);
     }
-  }, [eventsLocal, user?.id]);
+  }, [eventsLocal, user?.id, isInitialLoad]);
 
   /*keeps FullCalendar view in sync with state*/
   useEffect(() => {
