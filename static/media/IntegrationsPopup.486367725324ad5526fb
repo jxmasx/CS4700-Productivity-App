@@ -1,0 +1,262 @@
+/* -----------------------------------------------------------------------------
+ Integrations (Canvas / Calendar) onboarding popup aka IntegrationsPopup.js
+    - Skippable; can be shown again later from Settings.
+  - Toggles for "Connect Canvas" and "Connect Calendar".
+  - "Connect" and "Skip" buttons.
+  - Privacy text: imports titles, due dates, completion status only.
+  - Emits a summary via onConnected so parent can react.
+
+ UPDATED:
+  - Canvas is still MOCKED (no real API calls yet).
+  - Calendar now triggers the real Google OAuth flow by redirecting
+    the user to the backend route:  http://localhost:4000/auth/google
+
+  NOTE:
+  - We need to change the BACKEND_BASE_URL to our server url 
+ -----------------------------------------------------------------------------*/
+
+import React, { useState } from "react";
+
+/*Base URL for calendar backend (Node/Express server)*/
+const BACKEND_BASE_URL = "http://localhost:4000";
+
+const IntegrationsPopup = ({ isOpen, onClose, onConnected }) => {
+  const [connectCanvas, setConnectCanvas] = useState(false);
+  const [connectCalendar, setConnectCalendar] = useState(false);
+  const [statusMessage, setStatusMessage] = useState("");
+  const [isConnecting, setIsConnecting] = useState(false);
+
+  /*If the popup isn't supposed to be open, renders nothing*/
+  if (!isOpen) return null;
+
+  const handleConnect = () => {
+    /*Guard: if nothing is selected, lets the user know*/
+    if (!connectCanvas && !connectCalendar) {
+      setStatusMessage(
+        "Choose at least one integration, or tap Skip to continue without connecting."
+      );
+      return;
+    }
+
+    setIsConnecting(true);
+    setStatusMessage("");
+
+    /* -----------------------------------------------------------------------
+     1) If Calendar integration is selected:
+       - We immediately kick off the Google OAuth flow by redirecting
+          the browser to the backend /auth/google route.
+        - The backend will handle the login + consent, store tokens,
+          then redirect the user back to the React app.
+     -----------------------------------------------------------------------*/
+    if (connectCalendar) {
+         if (typeof onConnected === "function") {
+              const mockedCanvasAssignments = connectCanvas ? 7 : 0;
+        onConnected({
+          canvas: connectCanvas,
+          calendar: true,
+          canvasAssignments: mockedCanvasAssignments,
+          /*We don't yet know the real count of events; this is placeholder.*/
+          calendarEvents: 0,
+        });
+      }
+
+      /*Gives the user a tiny bit of feedback before redirect*/
+      setStatusMessage("Redirecting to Google to connect your calendar...");
+
+      /*IMPORTANT:
+       This will navigate away from the app, into Google OAuth.
+       After successful auth, the backend redirects back to React.*/
+      window.location.href = `${BACKEND_BASE_URL}/auth/google`;
+      return; 
+    }
+
+    /* -----------------------------------------------------------------------
+     2) If ONLY Canvas is selected (no Calendar):
+        - We keep the existing MOCK behavior for now.
+        - Later, this can be replaced with actual Canvas OAuth/API.
+     -----------------------------------------------------------------------*/
+    if (connectCanvas && !connectCalendar) {
+      const mockedCanvasAssignments = 7; /*Placeholder count for now*/
+
+      const combinedMessage = `Canvas connected. ${mockedCanvasAssignments} assignments turned into quests.`;
+
+      setStatusMessage(combinedMessage);
+      setIsConnecting(false);
+
+      if (typeof onConnected === "function") {
+        onConnected({
+          canvas: true,
+          calendar: false,
+          canvasAssignments: mockedCanvasAssignments,
+          calendarEvents: 0,
+        });
+      }
+
+      /*Close popup after short delay so they can read the message*/
+      window.setTimeout(() => {
+        if (typeof onClose === "function") onClose();
+      }, 1800);
+    }
+  };
+
+  const handleSkip = () => {
+    /*User chooses to not connect anything right now*/
+    setStatusMessage("You can connect later in Settings.");
+    window.setTimeout(() => {
+      if (typeof onClose === "function") onClose();
+    }, 1200);
+  };
+
+  return (
+    <div
+      className="integrations-overlay"
+      style={{
+        position: "fixed",
+        inset: 0,
+        background: "rgba(0,0,0,0.45)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        zIndex: 999,
+      }}
+    >
+      <div
+        className="integrations-modal wood"
+        style={{
+          width: "min(480px, 95vw)",
+          padding: "1.5rem",
+          borderRadius: 18,
+          background: "#f7e8cf",
+          boxShadow: "0 18px 40px rgba(0,0,0,0.35)",
+          color: "#3f220e",
+        }}
+      >
+        <h2 style={{ marginTop: 0, marginBottom: "0.5rem" }}>
+          Let’s turn your assignments and events into quests.
+        </h2>
+        <p style={{ marginTop: 0, fontSize: "0.9rem" }}>
+          You can disconnect anytime.
+        </p>
+        <p
+          style={{
+            marginTop: 0,
+            marginBottom: "0.75rem",
+            fontSize: "0.8rem",
+            color: "#5a3417",
+          }}
+        >
+          We import titles, due dates, and completion status. No private files
+          or grades. You stay in control of what’s connected.
+        </p>
+
+        {/*Toggles for Canvas + Calendar*/}
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: "0.5rem",
+            marginBottom: "0.75rem",
+          }}
+        >
+          {/*Canvas toggle*/}
+          <label
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "0.5rem",
+              cursor: "pointer",
+            }}
+          >
+            <input
+              type="checkbox"
+              checked={connectCanvas}
+              onChange={(e) => setConnectCanvas(e.target.checked)}
+            />
+            <span style={{ fontSize: "0.9rem", fontWeight: 600 }}>
+              Connect Canvas
+            </span>
+          </label>
+
+          {/*Calendar toggle (Google, via backend OAuth)*/}
+          <label
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "0.5rem",
+              cursor: "pointer",
+            }}
+          >
+            <input
+              type="checkbox"
+              checked={connectCalendar}
+              onChange={(e) => setConnectCalendar(e.target.checked)}
+            />
+            <span style={{ fontSize: "0.9rem", fontWeight: 600 }}>
+              Connect Calendar (Google)
+            </span>
+          </label>
+        </div>
+
+        {/*Buttons*/}
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "flex-end",
+            gap: "0.5rem",
+            marginTop: "0.5rem",
+          }}
+        >
+          <button
+            type="button"
+            onClick={handleSkip}
+            style={{
+              padding: "8px 14px",
+              borderRadius: 999,
+              border: "1px solid #8b5e34",
+              background: "#fff7e8",
+              cursor: "pointer",
+              fontSize: "0.85rem",
+              fontWeight: 600,
+            }}
+          >
+            Skip
+          </button>
+
+          <button
+            type="button"
+            onClick={handleConnect}
+            disabled={isConnecting}
+            style={{
+              padding: "8px 18px",
+              borderRadius: 999,
+              border: "none",
+              background: "#3b2a18",
+              color: "#fff7e8",
+              cursor: isConnecting ? "wait" : "pointer",
+              fontSize: "0.85rem",
+              fontWeight: 700,
+              boxShadow: "0 4px 10px rgba(0,0,0,0.25)",
+            }}
+          >
+            {isConnecting ? "Connecting..." : "Connect"}
+          </button>
+        </div>
+
+        {/*Status message for user feedback*/}
+        {statusMessage && (
+          <p
+            style={{
+              marginTop: "0.75rem",
+              fontSize: "0.8rem",
+              color: "#5a3417",
+            }}
+          >
+            {statusMessage}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default IntegrationsPopup;
