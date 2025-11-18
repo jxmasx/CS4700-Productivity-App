@@ -194,7 +194,7 @@ def delete_user_quest(user_id: int, user_quest_id: int, db: Session = Depends(ge
     return None
 
 # Get list of all of a user's pending rewards
-@router.get("/users/{user_id}/pr", response_model=list[PendingRewardOut])
+@router.get("/quests/{user_id}/pr", response_model=list[PendingRewardOut])
 def list_pending_rewards(user_id: int, db: Session = Depends(get_db)):
     db_items = db.query(PendingRewardItem).filter(PendingRewardItem.user_id == user_id).all()
     return db_items
