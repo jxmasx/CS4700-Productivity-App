@@ -4,6 +4,8 @@ import { useUser } from "../contexts/UserContext";
 import { readTasks, createTask, updateTask, deleteTask } from '../utils/TaskAPI.js'
 import { updateEconomy } from '../utils/EconAPI.js'
 import { updateRollover } from '../utils/UserAPI.js'
+import IntegrationsPopup from "./IntegrationsPopup";
+
 
 // Colors for each task type
 const TYPE_COLORS = {

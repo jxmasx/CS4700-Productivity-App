@@ -4,10 +4,9 @@ import TaskBoard from "./TaskBoard";
 import "../style.css";
 import CalendarView from "./CalendarView";
 import PomodoroTimer from "./PomodoroTimer";
-import ConnectCalendarModal from "./ConnectCalendarModal";
 import QuestifyNavBar from "./QuestifyNavBar";
-import QuestList from "./QuestList"
-import { API } from "../apiBase";
+import QuestList from "./QuestList";
+import IntegrationsPopupModal from "./IntegrationsPopupModal";
 
 import {
   Chart as ChartJS,
@@ -70,8 +69,8 @@ export default function Dashboard() {
   // State for task tab (TaskList, Calendar, Pomodoro, Inventory)
   const [taskTab, setTaskTab] = useState("list");
 
-  // State that determines whether or not to render calendar
-  const [showCalModal, setShowCalModal] = useState(false);
+  // Whether to show the Integrations popup
+  const [showIntegrations, setShowIntegrations] = useState(false);
 
   // Sets the current user info state
   const [state, setState] = useState(DEFAULT);
@@ -107,42 +106,26 @@ export default function Dashboard() {
       { id: "i5", name: "Boots", slot: "foot", bonus: { DEX: 1 }, desc: "Move with purpose." },
       { id: "i6", name: "Charm Locket", slot: "extra", bonus: { CHARM: 1 }, desc: "A glimmer of charisma." },
     ],
-  }
+  };
 
   // Set the user info on mount or on dependency change
   useEffect(() => {
-    setState(clone(USER_INFO))
+    setState(clone(USER_INFO));
   }, [user, isAuthenticated, loading]);
 
-  // Refresh user data on mount and when returning to dashboard
+  // Refresh user data on mount
   useEffect(() => {
     if (user?.id) {
       refreshUser();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // calendar connect prompt
-  useEffect(() => {
-    const check = async () => {
-      if (taskTab !== "calendar") return;
-      try {
-        const r = await fetch(API(`/oauth/status?user_id=1`), { credentials: "include" });
-        if (!r.ok) throw new Error();
-        const data = await r.json();
-        if (!data.connected) setShowCalModal(true);
-      } catch {
-        setShowCalModal(true);
-      }
-    };
-    check();
-  }, [taskTab]);
-
-  const onCalendarConnected = async () => {
-    try {
-      await fetch(API(`/calendar/sync`), { method: "POST", credentials: "include" });
-    } catch { }
+  // When integrations successfully connect:
+  const handleIntegrationsConnected = (info) => {
+    console.log("Integrations connected:", info);
     window.dispatchEvent(new CustomEvent("calendar:refresh"));
-    setShowCalModal(false);
+    setShowIntegrations(false);
   };
 
   const equipItem = (itemId, slot) => {
@@ -168,7 +151,7 @@ export default function Dashboard() {
     extra: "Xtra Item",
   };
 
-  // Stat bonuses from equipeed gear
+  // Stat bonuses from equipped gear
   const gearBonuses = useMemo(() => {
     const bonus = { STR: 0, DEX: 0, STAM: 0, INT: 0, WIS: 0, CHARM: 0 };
     Object.values(state.gear).forEach((id) => {
@@ -225,12 +208,17 @@ export default function Dashboard() {
   }
 
   const slotsOrder = [
-    "head", "chest", "arm",
-    "weapon1", "weapon2", "extra",
-    "pants", "foot", null,
+    "head",
+    "chest",
+    "arm",
+    "weapon1",
+    "weapon2",
+    "extra",
+    "pants",
+    "foot",
+    null,
   ];
 
-  // Data which is used by the radar chart (user stats)
   const radarData = useMemo(() => {
     const STR = totalStats.STR ?? 0;
     const DEX = totalStats.DEX ?? 0;
@@ -255,7 +243,6 @@ export default function Dashboard() {
     };
   }, [totalStats]);
 
-  // Configuration for stats radar chart
   const radarOptions = {
     responsive: true,
     maintainAspectRatio: true,
@@ -271,11 +258,7 @@ export default function Dashboard() {
   return (
     <div className="wrap">
       <div className="wood">
-
-        {/* <div className="title-band"></div> */}
-        {/*Global navigation – links Dashboard, Adventurer, Guild Hall, Intro, etc.*/}
         <QuestifyNavBar />
-        {/* <div className="dashboard-root"></div> */}
 
         <div className="title-band"></div>
 
@@ -293,11 +276,21 @@ export default function Dashboard() {
               </div>
               <div className="info-stack">
                 <div style={{ marginTop: 15 }}></div>
-                <div><strong>Class:</strong> {state.profile.class}</div>
-                <div><strong>Level:</strong> {state.profile.level}</div>
-                <div><strong>Guild Rank:</strong> {state.profile.rank}</div>
-                <div><strong>Guild Streak:</strong> {state.profile.streak}</div>
-                <div><strong>EXP:</strong> {state.profile.xp} / {state.profile.xpMax}</div>
+                <div>
+                  <strong>Class:</strong> {state.profile.class}
+                </div>
+                <div>
+                  <strong>Level:</strong> {state.profile.level}
+                </div>
+                <div>
+                  <strong>Guild Rank:</strong> {state.profile.rank}
+                </div>
+                <div>
+                  <strong>Guild Streak:</strong> {state.profile.streak}
+                </div>
+                <div>
+                  <strong>EXP:</strong> {state.profile.xp} / {state.profile.xpMax}
+                </div>
               </div>
             </section>
 
@@ -324,7 +317,10 @@ export default function Dashboard() {
                 </button>
                 <button
                   className={`tab ${taskTab === "calendar" ? "active" : ""}`}
-                  onClick={() => setTaskTab("calendar")}
+                  onClick={() => {
+                    setTaskTab("calendar");
+                    setShowIntegrations(true);
+                  }}
                 >
                   Calendar
                 </button>
@@ -348,13 +344,12 @@ export default function Dashboard() {
 
               {taskTab === "calendar" && (
                 <>
-                  {showCalModal && (
-                    <ConnectCalendarModal
-                      onConnected={onCalendarConnected}
-                      onClose={() => setShowCalModal(false)}
-                    />
-                  )}
                   <CalendarView />
+                  <IntegrationsPopupModal
+                    isOpen={showIntegrations}
+                    onClose={() => setShowIntegrations(false)}
+                    onConnected={handleIntegrationsConnected}
+                  />
                 </>
               )}
 

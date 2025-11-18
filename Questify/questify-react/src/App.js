@@ -11,6 +11,7 @@ import IntroScene from "./components/IntroScene";
 import QuestCard from "./components/QuestCard";
 import GuildHall from "./components/GuildHall";
 import AdventurerNamePlate from "./components/AdventurerNamePlate";
+import IntegrationsPopup from "./components/IntegrationsPopup";
 
 function App() {
   return (
@@ -30,6 +31,7 @@ function App() {
             <Route path="/quest-card" element={<QuestCard />} />
             <Route path="/guild-hall" element={<GuildHall />} />
             <Route path="/adventure-nameplate" element={<AdventurerNamePlate/>}/> 
+            <Route path="/integration-popup" element={<IntegrationsPopup/>}/> 
           </Route>
 
         </Routes>

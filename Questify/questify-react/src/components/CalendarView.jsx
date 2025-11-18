@@ -1,5 +1,4 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { API } from "../apiBase";
 
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
@@ -7,6 +6,9 @@ import timeGridPlugin from "@fullcalendar/timegrid";
 import listPlugin from "@fullcalendar/list";
 import interactionPlugin from "@fullcalendar/interaction";
 import rrulePlugin from "@fullcalendar/rrule";
+
+/*Backend for Google Calendar*/
+const BACKEND_BASE_URL = "http://localhost:4000";
 
 const STORE_LOCAL_EVENTS = "qf_events_local_v2";
 const STORE_TASKS = "qf_tasks_v1";
@@ -158,8 +160,8 @@ export default function CalendarView({ date = new Date() }) {
   const [currentDate, setCurrentDate] = useState(date);
   const [view, setView] = useState("dayGridMonth");
 
-  const [eventsFetched, setEventsFetched] = useState([]);
-  const [eventsLocal, setEventsLocal] = useState(loadLocalEvents());
+  const [eventsFetched, setEventsFetched] = useState([]); 
+  const [eventsLocal, setEventsLocal] = useState(loadLocalEvents()); 
 
   const [showAdd, setShowAdd] = useState(false);
   const [addForm, setAddForm] = useState({
@@ -177,39 +179,50 @@ export default function CalendarView({ date = new Date() }) {
 
   const calRef = useRef(null);
 
+  /*Fetches Google Calendar events from backend*/
   const loadEvents = useCallback(async () => {
     try {
-      const res = await fetch(API("/calendar/events"), { credentials: "include" });
+      const res = await fetch(`${BACKEND_BASE_URL}/api/google/events`, {
+        credentials: "include", 
+      });
       if (!res.ok) {
+        console.warn("Google events fetch failed with status:", res.status);
         setEventsFetched([]);
         return;
       }
+
       const data = await res.json();
-      const all = [...(data.imported || []), ...(data.local || [])].map((e) => ({
-        id: `backend-${e.id || crypto.randomUUID()}`,
+
+      const mapped = (data || []).map((e) => ({
+        id: `google-${e.id || crypto.randomUUID()}`,
         title: e.title || "(no title)",
         start: clampDate(e.start),
         end: e.end ? clampDate(e.end) : clampDate(e.start),
         allDay: !!e.allDay,
         editable: false,
-        extendedProps: { source: "backend", category: "meeting" },
+        extendedProps: { source: "google", category: "meeting" },
       }));
-      setEventsFetched(all);
-    } catch {
+
+      setEventsFetched(mapped);
+    } catch (err) {
+      console.error("Error loading Google events:", err);
       setEventsFetched([]);
     }
   }, []);
 
+  /*initial load*/
   useEffect(() => {
     loadEvents();
   }, [loadEvents]);
 
+  /*listens for calendar:refresh custom event (from Dashboard)*/
   useEffect(() => {
     const handler = () => loadEvents();
     window.addEventListener("calendar:refresh", handler);
     return () => window.removeEventListener("calendar:refresh", handler);
   }, [loadEvents]);
 
+  /*composes all events: local + tasks + google*/
   const events = useMemo(() => {
     const tasks = tasksToEvents(loadTasks());
     const locals = eventsLocal.map(toFullCalendarEvent);
@@ -217,10 +230,12 @@ export default function CalendarView({ date = new Date() }) {
     return [...locals, ...tasks, ...fetched];
   }, [eventsLocal, eventsFetched]);
 
+  /*persists local events*/
   useEffect(() => {
     saveLocalEvents(eventsLocal);
   }, [eventsLocal]);
 
+  /*keeps FullCalendar view in sync with state*/
   useEffect(() => {
     const api = calRef.current?.getApi();
     if (api && api.view?.type !== view) api.changeView(view);
@@ -382,10 +397,7 @@ export default function CalendarView({ date = new Date() }) {
       end: ev.end ? new Date(ev.end) : new Date(),
       allDay: !!ev.allDay,
     };
-    setEventsLocal((prev) => {
-      const next = applyMoveOrResize(prev, ev, mutation);
-      return next;
-    });
+    setEventsLocal((prev) => applyMoveOrResize(prev, ev, mutation));
   };
 
   const handleEventResize = (resizeInfo) => {
@@ -396,10 +408,7 @@ export default function CalendarView({ date = new Date() }) {
       end: ev.end ? new Date(ev.end) : new Date(),
       allDay: !!ev.allDay,
     };
-    setEventsLocal((prev) => {
-      const next = applyMoveOrResize(prev, ev, mutation);
-      return next;
-    });
+    setEventsLocal((prev) => applyMoveOrResize(prev, ev, mutation));
   };
 
   return (
@@ -431,7 +440,9 @@ export default function CalendarView({ date = new Date() }) {
         <button className="tab" onClick={() => setCurrentDate(prevDate(view, currentDate))}>
           ◀
         </button>
-        <button className="tab" onClick={() => setCurrentDate(new Date())}>Today</button>
+        <button className="tab" onClick={() => setCurrentDate(new Date())}>
+          Today
+        </button>
         <button className="tab" onClick={() => setCurrentDate(nextDate(view, currentDate))}>
           ▶
         </button>
@@ -515,8 +526,12 @@ export default function CalendarView({ date = new Date() }) {
         <Modal onClose={() => setShowAdd(false)} title="New Event">
           <EventForm form={addForm} setForm={setAddForm} />
           <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 8 }}>
-            <button className="tab" onClick={() => setShowAdd(false)}>Cancel</button>
-            <button className="tab active" onClick={saveAdd}>Save</button>
+            <button className="tab" onClick={() => setShowAdd(false)}>
+              Cancel
+            </button>
+            <button className="tab active" onClick={saveAdd}>
+              Save
+            </button>
           </div>
         </Modal>
       )}
@@ -530,8 +545,17 @@ export default function CalendarView({ date = new Date() }) {
           title="Edit Event"
         >
           <EventForm form={editForm} setForm={setEditForm} />
-          <div style={{ display: "flex", gap: 8, justifyContent: "space-between", marginTop: 8 }}>
-            <button className="tab" onClick={deleteEdit}>Delete</button>
+          <div
+            style={{
+              display: "flex",
+              gap: 8,
+              justifyContent: "space-between",
+              marginTop: 8,
+            }}
+          >
+            <button className="tab" onClick={deleteEdit}>
+              Delete
+            </button>
             <div style={{ display: "flex", gap: 8 }}>
               <button
                 className="tab"
@@ -542,7 +566,9 @@ export default function CalendarView({ date = new Date() }) {
               >
                 Cancel
               </button>
-              <button className="tab active" onClick={saveEdit}>Save</button>
+              <button className="tab active" onClick={saveEdit}>
+                Save
+              </button>
             </div>
           </div>
         </Modal>
@@ -586,15 +612,6 @@ function Modal({ title, children, onClose }) {
 
 function EventForm({ form, setForm }) {
   const freq = form.repeat?.freq || "NONE";
-  const weekDays = [
-    { label: "Sun", val: 0 },
-    { label: "Mon", val: 1 },
-    { label: "Tue", val: 2 },
-    { label: "Wed", val: 3 },
-    { label: "Thu", val: 4 },
-    { label: "Fri", val: 5 },
-    { label: "Sat", val: 6 },
-  ];
 
   return (
     <div style={{ display: "grid", gap: 8 }}>
