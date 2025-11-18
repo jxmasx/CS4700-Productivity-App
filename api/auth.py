@@ -133,6 +133,15 @@ async def create_item(item: SignupIn, db: Session = Depends(get_db)):
         )
         db.add(user_quest)
         
+        # Initialize calendar storage for new user
+        from calendar import CalendarItem
+        calendar_item = CalendarItem(
+            user_id=db_item.id,
+            store_local_events="[]",
+            store_tasks="[]"
+        )
+        db.add(calendar_item)
+        
         db.commit()
         db.refresh(db_item)
         

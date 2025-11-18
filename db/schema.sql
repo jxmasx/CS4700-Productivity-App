@@ -1,5 +1,5 @@
 --
--- File generated with SQLiteStudio v3.4.17 on Mon Nov 17 18:19:00 2025
+-- File generated with SQLiteStudio v3.4.17 on Tue Nov 18 14:17:27 2025
 --
 -- Text encoding used: System
 --
@@ -23,6 +23,9 @@ CREATE TABLE IF NOT EXISTS avatars (
   str         INTEGER NOT NULL DEFAULT 10,
   int         INTEGER NOT NULL DEFAULT 10
 );
+
+-- Table: calendar
+CREATE TABLE IF NOT EXISTS calendar (user_id INTEGER PRIMARY KEY NOT NULL REFERENCES users (id), store_local_events TEXT, store_tasks TEXT);
 
 -- Table: custom_rewards
 CREATE TABLE IF NOT EXISTS custom_rewards (

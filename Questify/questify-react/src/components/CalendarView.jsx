@@ -1,4 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useUser } from "../contexts/UserContext";
+import { getCalendar, updateCalendar } from "../utils/CalendarAPI"
 
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
@@ -10,8 +12,8 @@ import rrulePlugin from "@fullcalendar/rrule";
 /*Backend for Google Calendar*/
 const BACKEND_BASE_URL = "http://localhost:4000";
 
-const STORE_LOCAL_EVENTS = "qf_events_local_v2";
-const STORE_TASKS = "qf_tasks_v1";
+// const STORE_LOCAL_EVENTS = "qf_events_local_v2";
+// const STORE_TASKS = "qf_tasks_v1";
 
 const clampDate = (v) => {
   const d = new Date(v);
@@ -40,9 +42,21 @@ const fromLocalInputValue = (s, allDay = false) => {
 
 const weekdayNumToRRule = ["SU", "MO", "TU", "WE", "TH", "FR", "SA"];
 
-function loadLocalEvents() {
+// function loadLocalEvents() {
+//   try {
+//     const raw = localStorage.getItem(STORE_LOCAL_EVENTS);
+//     if (!raw) return [];
+//     const arr = JSON.parse(raw);
+//     return Array.isArray(arr) ? arr : [];
+//   } catch {
+//     return [];
+//   }
+// }
+
+async function loadLocalEvents(user_id) {
   try {
-    const raw = localStorage.getItem(STORE_LOCAL_EVENTS);
+    const data = await getCalendar(user_id);
+    const raw = data["store_local_events"];
     if (!raw) return [];
     const arr = JSON.parse(raw);
     return Array.isArray(arr) ? arr : [];
@@ -51,15 +65,34 @@ function loadLocalEvents() {
   }
 }
 
-function saveLocalEvents(list) {
+// function saveLocalEvents(list) {
+//   try {
+//     localStorage.setItem(STORE_LOCAL_EVENTS, JSON.stringify(list));
+//   } catch { }
+// }
+
+function saveLocalEvents(list, user_id) {
   try {
-    localStorage.setItem(STORE_LOCAL_EVENTS, JSON.stringify(list));
-  } catch {}
+    // localStorage.setItem(STORE_LOCAL_EVENTS, JSON.stringify(list));
+    updateCalendar(user_id, {"store_local_events": JSON.stringify(list)})
+  } catch { }
 }
 
-function loadTasks() {
+// function loadTasks() {
+//   try {
+//     const raw = localStorage.getItem(STORE_TASKS);
+//     if (!raw) return [];
+//     const t = JSON.parse(raw);
+//     return Array.isArray(t) ? t : [];
+//   } catch {
+//     return [];
+//   }
+// }
+
+async function loadTasks(user_id) {
   try {
-    const raw = localStorage.getItem(STORE_TASKS);
+    const data = await getCalendar(user_id);
+    const raw = data["store_tasks"];
     if (!raw) return [];
     const t = JSON.parse(raw);
     return Array.isArray(t) ? t : [];
@@ -157,11 +190,14 @@ function applyMoveOrResize(localEvents, fcEvent, mutation) {
 }
 
 export default function CalendarView({ date = new Date() }) {
+  const { user, refreshUser } = useUser();
+
   const [currentDate, setCurrentDate] = useState(date);
   const [view, setView] = useState("dayGridMonth");
 
-  const [eventsFetched, setEventsFetched] = useState([]); 
-  const [eventsLocal, setEventsLocal] = useState(loadLocalEvents()); 
+  const [eventsFetched, setEventsFetched] = useState([]);
+  const [eventsLocal, setEventsLocal] = useState([]);
+  const [tasks, setTasks] = useState([]);
 
   const [showAdd, setShowAdd] = useState(false);
   const [addForm, setAddForm] = useState({
@@ -183,7 +219,7 @@ export default function CalendarView({ date = new Date() }) {
   const loadEvents = useCallback(async () => {
     try {
       const res = await fetch(`${BACKEND_BASE_URL}/api/google/events`, {
-        credentials: "include", 
+        credentials: "include",
       });
       if (!res.ok) {
         console.warn("Google events fetch failed with status:", res.status);
@@ -210,7 +246,19 @@ export default function CalendarView({ date = new Date() }) {
     }
   }, []);
 
-  /*initial load*/
+  /*initial load of local events and tasks*/
+  useEffect(() => {
+    async function loadLocalData() {
+      if (!user?.id) return;
+      const events = await loadLocalEvents(user.id);
+      const taskData = await loadTasks(user.id);
+      setEventsLocal(events);
+      setTasks(taskData);
+    }
+    loadLocalData();
+  }, [user?.id]);
+
+  /*initial load of Google events*/
   useEffect(() => {
     loadEvents();
   }, [loadEvents]);
@@ -224,16 +272,18 @@ export default function CalendarView({ date = new Date() }) {
 
   /*composes all events: local + tasks + google*/
   const events = useMemo(() => {
-    const tasks = tasksToEvents(loadTasks());
+    const taskEvents = tasksToEvents(tasks);
     const locals = eventsLocal.map(toFullCalendarEvent);
     const fetched = eventsFetched;
-    return [...locals, ...tasks, ...fetched];
-  }, [eventsLocal, eventsFetched]);
+    return [...locals, ...taskEvents, ...fetched];
+  }, [eventsLocal, eventsFetched, tasks]);
 
   /*persists local events*/
   useEffect(() => {
-    saveLocalEvents(eventsLocal);
-  }, [eventsLocal]);
+    if (user?.id) {
+      saveLocalEvents(eventsLocal, user.id);
+    }
+  }, [eventsLocal, user?.id]);
 
   /*keeps FullCalendar view in sync with state*/
   useEffect(() => {
@@ -272,10 +322,10 @@ export default function CalendarView({ date = new Date() }) {
     let end =
       isAllDay
         ? (() => {
-            const d = new Date(start);
-            d.setHours(23, 59, 0, 0);
-            return d;
-          })()
+          const d = new Date(start);
+          d.setHours(23, 59, 0, 0);
+          return d;
+        })()
         : fromLocalInputValue(addForm.endLocal, false) || new Date(start.getTime() + 30 * 60 * 1000);
 
     if (end < start) end = new Date(start.getTime() + 30 * 60 * 1000);
@@ -344,10 +394,10 @@ export default function CalendarView({ date = new Date() }) {
     const end =
       isAllDay
         ? (() => {
-            const d = new Date(start);
-            d.setHours(23, 59, 0, 0);
-            return d;
-          })()
+          const d = new Date(start);
+          d.setHours(23, 59, 0, 0);
+          return d;
+        })()
         : fromLocalInputValue(editForm.endLocal, false) || new Date(start.getTime() + 30 * 60 * 1000);
 
     setEventsLocal((prev) => {
@@ -365,17 +415,17 @@ export default function CalendarView({ date = new Date() }) {
           repeat:
             editForm.repeat?.freq && editForm.repeat.freq !== "NONE"
               ? {
-                  freq: editForm.repeat.freq,
-                  interval: Number(editForm.repeat.interval) || 1,
-                  byWeekday: editForm.repeat.byWeekday || [],
-                }
+                freq: editForm.repeat.freq,
+                interval: Number(editForm.repeat.interval) || 1,
+                byWeekday: editForm.repeat.byWeekday || [],
+              }
               : { freq: "NONE" },
           durationMs:
             isAllDay
               ? undefined
               : next[i].repeat?.freq && next[i].repeat.freq !== "NONE"
-              ? Math.max(30 * 60 * 1000, end.getTime() - start.getTime())
-              : undefined,
+                ? Math.max(30 * 60 * 1000, end.getTime() - start.getTime())
+                : undefined,
         };
       }
       return next;
@@ -500,8 +550,8 @@ export default function CalendarView({ date = new Date() }) {
             const bg = ev.extendedProps?.color
               ? ev.extendedProps.color
               : isFocus
-              ? "linear-gradient(180deg,#cde7ff 0%,#9fc9ff 100%)"
-              : "linear-gradient(180deg,#f2c988 0%,#e9b76d 100%)";
+                ? "linear-gradient(180deg,#cde7ff 0%,#9fc9ff 100%)"
+                : "linear-gradient(180deg,#f2c988 0%,#e9b76d 100%)";
             return (
               <div
                 title={ev.title}
