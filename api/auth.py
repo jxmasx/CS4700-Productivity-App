@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 import logging
 
 from quests import UserQuestItem, QuestItem
+from calendar import CalendarItem
 
 router = APIRouter(prefix="/api", tags=["auth"])
 
@@ -134,7 +135,6 @@ async def create_item(item: SignupIn, db: Session = Depends(get_db)):
         db.add(user_quest)
         
         # Initialize calendar storage for new user
-        from calendar import CalendarItem
         calendar_item = CalendarItem(
             user_id=db_item.id,
             store_local_events="[]",
