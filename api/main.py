@@ -9,7 +9,7 @@ from auth import router as auth_router
 from tasks import router as tasks_router
 from economy import router as economy_router
 from quests import router as quests_router
-from calendar import router as calendar_router
+from qcalendar import router as calendar_router
 
 load_dotenv()
 

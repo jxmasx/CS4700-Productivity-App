@@ -4,7 +4,7 @@ from sqlalchemy import Column, Integer, String
 from sqlalchemy.orm import Session
 from db import get_db, Base
 
-router = APIRouter(prefix="/api", tags=["calendar"])
+router = APIRouter(prefix="/api", tags=["qcalendar"])
 
 class CalendarItem(Base):
     __tablename__ = "calendar"
