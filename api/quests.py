@@ -11,9 +11,9 @@ class QuestItem(Base):
     __tablename__ = "quests"
     id = Column(String, primary_key=True, index=True)
     label = Column(String)
-    reward_xp = Column(Integer, name="rewardXp")
-    reward_gold = Column(Integer, name="rewardGold")
-    status_message = Column(String, name="statusMessage")
+    reward_xp = Column(Integer)
+    reward_gold = Column(Integer)
+    status_message = Column(String)
 
 class QuestIn(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
