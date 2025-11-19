@@ -9,6 +9,7 @@ from auth import router as auth_router
 from tasks import router as tasks_router
 from economy import router as economy_router
 from quests import router as quests_router
+from qcalendar import router as calendar_router
 
 load_dotenv()
 
@@ -31,6 +32,8 @@ API.include_router(auth_router)
 API.include_router(tasks_router)
 API.include_router(economy_router)
 API.include_router(quests_router)
+API.include_router(calendar_router)
+
 
 if __name__ == "__main__":
     import uvicorn
