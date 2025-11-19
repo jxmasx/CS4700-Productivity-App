@@ -26,6 +26,12 @@ const IntegrationsPopupModal = ({ isOpen, onClose, onConnected }) => {
   /*If the popup isn't supposed to be open, renders nothing*/
   if (!isOpen) return null;
 
+
+  function handleConnectCalendar() {
+  /*Opens Google OAuth in the same tab or a popup*/
+    window.location.href = `${BACKEND_BASE_URL}/auth/google`;
+}
+
   const handleConnect = () => {
     if (!connectCanvas && !connectCalendar) {
       setStatusMessage(

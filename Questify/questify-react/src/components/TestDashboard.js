@@ -1,12 +1,21 @@
+/* -----------------------------------------------------------------------------
+   CENTRAL PLAYER DASHBOARD / TestDashboard.js
+
+   - Starter Quest:
+     * QuestCard manages its own completion via "questStatus" in localStorage
+     * QuestCard enqueues rewards for Guild Hall via "pendingRewards"
+     * onQuestCompleted gives XP + Gold immediately on the dashboard
+ -----------------------------------------------------------------------------*/
+
 import React, { useEffect, useMemo, useState } from "react";
 import { useUser } from "../contexts/UserContext";
-import TaskBoard from "./TaskBoard";
 import "../style.css";
+import TaskBoard from "./TaskBoard";
 import CalendarView from "./CalendarView";
 import PomodoroTimer from "./PomodoroTimer";
+import QuestCard from "./QuestCard";
+import IntegrationsPopup from "./IntegrationsPopup";
 import QuestifyNavBar from "./QuestifyNavBar";
-import QuestList from "./QuestList";
-import IntegrationsPopupModal from "./IntegrationsPopupModal";
 
 import {
   Chart as ChartJS,
@@ -19,33 +28,53 @@ import {
 } from "chart.js";
 import { Radar as RadarChartJS } from "react-chartjs-2";
 
-//Activate specific components in ChartJS
-ChartJS.register(RadialLinearScale, PointElement, LineElement, Filler, Tooltip, Legend);
+/*Registers radar chart pieces*/
+ChartJS.register(
+  RadialLinearScale,
+  PointElement,
+  LineElement,
+  Filler,
+  Tooltip,
+  Legend
+);
 
-//Create a clone of a JSON object to prevent overwriting
+/*LocalStorage keys*/
+// const STORE = "qf_dashboard_state_v1"; // Replaced with real data
+const INTEGRATIONS_SEEN_KEY = "qf_integrations_seen_v1";
+const QUEST_STATUS_KEY = "questStatus";
+
+/*Starter quest rewards (should match QuestCard defaults)*/
+const STARTER_QUEST_ID = "starter-quest-first-habit";
+const STARTER_QUEST_XP = 10;
+const STARTER_QUEST_GOLD = 5;
+
+/*Simple deep clone fallback*/
 const clone = (obj) =>
-  typeof structuredClone === "function" ? structuredClone(obj) : JSON.parse(JSON.stringify(obj));
+  typeof structuredClone === "function"
+    ? structuredClone(obj)
+    : JSON.parse(JSON.stringify(obj));
 
-//Default data that is shown if no user is loaded yet
+/*Baseline state if nothing is saved yet - WILL NEED TO BE REPLACED*/
+// [JON] I replaced this with a more blank template (should not really be seen)
 const DEFAULT = {
   profile: {
-    name: "",
-    class: "",
-    rank: "",
-    streak: 0,
-    level: 0,
+    name: "None",
+    class: "Scholar",
+    rank: "Apprentice",
+    streak: 1,
+    level: 1,
     xp: 0,
     xpMax: 100,
-    gold: 0,
-    diamonds: 0,
+    gold: 250,
+    diamonds: 5,
   },
   baseStats: {
-    STR: 0,
-    DEX: 0,
-    STAM: 0,
-    INT: 0,
-    WIS: 0,
-    CHARM: 0,
+    STR: 4,
+    DEX: 6,
+    STAM: 5,
+    INT: 7,
+    WIS: 5,
+    CHARM: 3,
   },
   gearSlots: ["head", "chest", "arm", "pants", "foot", "weapon1", "weapon2", "extra"],
   gear: {},
@@ -57,25 +86,70 @@ const DEFAULT = {
     { id: "i5", name: "Boots", slot: "foot", bonus: { DEX: 1 }, desc: "Move with purpose." },
     { id: "i6", name: "Charm Locket", slot: "extra", bonus: { CHARM: 1 }, desc: "A glimmer of charisma." },
   ],
+  tasks: [
+    { id: "t1", title: "Write 300 words", type: "task", progress: 0, exp: 40, gold: 20, diamonds: 0 },
+    { id: "t2", title: "Daily Water", type: "habit", progress: 0, exp: 15, gold: 5, diamonds: 0 },
+    { id: "t3", title: "PR for Sprint", type: "task", progress: 0, exp: 30, gold: 15, diamonds: 0 },
+  ],
 };
 
 export default function Dashboard() {
-  /*Gets the user data from UserContext*/
-  const { user, isAuthenticated, loading, refreshUser } = useUser();
-
-  /*Base to grab assets from public folder*/
   const base = process.env.PUBLIC_URL || "";
 
-  /*State for task tab (TaskList, Calendar, Pomodoro, Inventory)*/
+  /*Shows which tab on the right-hand side is active*/
   const [taskTab, setTaskTab] = useState("list");
 
-  /*Whether to show the Integrations popup*/
-  const [showIntegrations, setShowIntegrations] = useState(false);
+  /*Integrations popup: opens by default if never seen before*/
+  const [showIntegrations, setShowIntegrations] = useState(() => {
+    const seen = localStorage.getItem(INTEGRATIONS_SEEN_KEY);
+    return !seen;
+  });
 
-  /*Sets the current user info state*/
+  /*Main dashboard state (profile, stats, gear, tasks, etc.)*/
+  // [JON] Replaced, doesn't need localStorage
   const [state, setState] = useState(DEFAULT);
 
-  /*Set user info as a JSON object usable by the dashboard*/
+  /*Controls whether the starter quest popup is visible*/
+  const [showStarterQuestPopup, setShowStarterQuestPopup] = useState(false);
+
+  /*Gets user data from UserContext*/
+  const { user, isAuthenticated, loading } = useUser();
+
+  /*Persist dashboard state whenever it changes*/
+  // [JON] Sets state to user info on mount
+  useEffect(() => {
+    setState(clone(USER_INFO))
+  }, [user, isAuthenticated, loading]);
+
+  const handleCloseIntegrations = () => {
+    localStorage.setItem(INTEGRATIONS_SEEN_KEY, "1");
+    setShowIntegrations(false);
+  };
+
+  /*Placeholder for when Canvas/Calendar is connected*/
+  const handleIntegrationsConnected = (info) => {
+    /* info = { canvas, calendar, canvasAssignments, calendarEvents}
+       Future idea: auto-create tasks from assignments and events here.*/
+    console.log("Integrations connected:", info);
+  };
+
+  /* ---------------------- GEAR / INVENTORY LOGIC ------------------------- */
+  const equipItem = (itemId, slot) => {
+    setState((prev) => ({
+      ...prev,
+      gear: { ...prev.gear, [slot]: itemId },
+    }));
+  };
+
+  const unequipSlot = (slot) => {
+    setState((prev) => {
+      const next = { ...prev, gear: { ...prev.gear } };
+      delete next.gear[slot];
+      return next;
+    });
+  };
+
+  // [JON] This is the actual user info. Tasks part should be useless, gear/items not working yet
   const USER_INFO = {
     profile: {
       name: user?.display_name ?? "",
@@ -106,39 +180,12 @@ export default function Dashboard() {
       { id: "i5", name: "Boots", slot: "foot", bonus: { DEX: 1 }, desc: "Move with purpose." },
       { id: "i6", name: "Charm Locket", slot: "extra", bonus: { CHARM: 1 }, desc: "A glimmer of charisma." },
     ],
-  };
-
-  /*Sets the user info on mount or on dependency change*/
-  useEffect(() => {
-    setState(clone(USER_INFO));
-  }, [user, isAuthenticated, loading]);
-
-  /*Refreshes user data on mount*/
-  useEffect(() => {
-    if (user?.id) {
-      refreshUser();
-    }
-    /*eslint-disable-next-line react-hooks/exhaustive-deps*/
-  }, []);
-
-  /*When integrations successfully connect:*/
-  const handleIntegrationsConnected = (info) => {
-    console.log("Integrations connected:", info);
-    window.dispatchEvent(new CustomEvent("calendar:refresh"));
-    setShowIntegrations(false);
-  };
-
-  const equipItem = (itemId, slot) => {
-    setState((prev) => ({ ...prev, gear: { ...prev.gear, [slot]: itemId } }));
-  };
-
-  const unequipSlot = (slot) => {
-    setState((prev) => {
-      const next = { ...prev, gear: { ...prev.gear } };
-      delete next.gear[slot];
-      return next;
-    });
-  };
+    tasks: [
+      { id: "t1", title: "Write 300 words", type: "task", progress: 0, exp: 40, gold: 20, diamonds: 0 },
+      { id: "t2", title: "Daily Water", type: "habit", progress: 0, exp: 15, gold: 5, diamonds: 0 },
+      { id: "t3", title: "PR for Sprint", type: "task", progress: 0, exp: 30, gold: 15, diamonds: 0 },
+    ],
+  }
 
   const slotLabels = {
     head: "Head Gear",
@@ -151,21 +198,23 @@ export default function Dashboard() {
     extra: "Xtra Item",
   };
 
-  /*Stat bonuses from equipped gear*/
   const gearBonuses = useMemo(() => {
     const bonus = { STR: 0, DEX: 0, STAM: 0, INT: 0, WIS: 0, CHARM: 0 };
     Object.values(state.gear).forEach((id) => {
       const item = state.items.find((i) => i.id === id);
       if (!item || !item.bonus) return;
-      for (const k in item.bonus) bonus[k] += item.bonus[k];
+      for (const k in item.bonus) {
+        bonus[k] += item.bonus[k];
+      }
     });
     return bonus;
   }, [state.gear, state.items]);
 
-  /*Total of stats plus bonus stats from equipped gear*/
   const totalStats = useMemo(() => {
     const res = { ...state.baseStats };
-    for (const k in gearBonuses) res[k] = (res[k] || 0) + gearBonuses[k];
+    for (const k in gearBonuses) {
+      res[k] = (res[k] || 0) + gearBonuses[k];
+    }
     return res;
   }, [state.baseStats, gearBonuses]);
 
@@ -176,8 +225,12 @@ export default function Dashboard() {
       return;
     }
     const names = choices.map((i) => i.name).join("\n");
-    const pick = prompt(`Equip to ${slotLabels[slot]}:\n${names}\nType the exact name.`);
-    const item = choices.find((i) => i.name.toLowerCase() === String(pick || "").toLowerCase());
+    const pick = prompt(
+      `Equip to ${slotLabels[slot]}:\n${names}\nType the exact name.`
+    );
+    const item = choices.find(
+      (i) => i.name.toLowerCase() === String(pick || "").toLowerCase()
+    );
     if (item) equipItem(item.id, slot);
   }
 
@@ -219,12 +272,15 @@ export default function Dashboard() {
     null,
   ];
 
+  /* --------------------------- RADAR CHART ------------------------------- */
+
   const radarData = useMemo(() => {
     const STR = totalStats.STR ?? 0;
     const DEX = totalStats.DEX ?? 0;
     const INT = totalStats.INT ?? 0;
     const WIS = totalStats.WIS ?? 0;
     const CHARM = totalStats.CHARM ?? 0;
+
     return {
       labels: ["Strength", "Dexterity", "Intelligence", "Wisdom", "Charisma"],
       datasets: [
@@ -252,18 +308,74 @@ export default function Dashboard() {
         ticks: { stepSize: 5 },
       },
     },
-    plugins: { legend: { display: false } },
+    plugins: {
+      legend: { display: false },
+    },
   };
 
+  /* ---------------------- QUEST POPUP HANDLERS --------------------------- */
+
+  /*Called by TaskBoard when the *first* task is given/created.*/
+  const handleFirstTaskGiven = () => {
+    /*Does not show popup if quest is already completed.*/
+    try {
+      const raw = localStorage.getItem(QUEST_STATUS_KEY);
+      if (raw) {
+        const map = JSON.parse(raw);
+        if (map && map[STARTER_QUEST_ID]?.completed) {
+          return;
+        }
+      }
+    } catch {
+      /*If parsing fails, just fall through and show popup.*/
+    }
+
+    setShowStarterQuestPopup(true);
+  };
+
+  const handleStarterQuestCompleted = () => {
+    /*Grants EXP + Gold immediately on the Dashboard*/
+    setState((prev) => {
+      const prevProfile = prev.profile || {};
+      let xp = (prevProfile.xp || 0) + STARTER_QUEST_XP;
+      let gold = (prevProfile.gold || 0) + STARTER_QUEST_GOLD;
+      let level = prevProfile.level || 1;
+      const xpMax = prevProfile.xpMax || 100;
+
+      if (xp >= xpMax) {
+        xp = xp - xpMax;
+        level = level + 1;
+      }
+
+      return {
+        ...prev,
+        profile: {
+          ...prevProfile,
+          xp,
+          gold,
+          level,
+          xpMax,
+        },
+      };
+    });
+
+    /*Closes the popup when quest is done*/
+    setShowStarterQuestPopup(false);
+  };
+
+  /* --------------------------- RENDER ------------------------------------ */
   return (
     <div className="wrap">
       <div className="wood">
-        <QuestifyNavBar />
-
+        {/*Decorative title band across the top*/}
         <div className="title-band"></div>
 
-        <div className="dashboard-root container-1200">
+        {/*Global navigation – links Dashboard, Adventurer, Guild Hall, Intro, etc.*/}
+          <QuestifyNavBar />
+
+        <div className="dashboard-root">
           <div className="app-container wb-layout">
+            {/*Left Column: Avatar + Profile*/}
             <section className="panel avatar-panel">
               <h2>{state.profile.name}</h2>
               <div className="avatar-box">
@@ -291,9 +403,13 @@ export default function Dashboard() {
                 <div>
                   <strong>EXP:</strong> {state.profile.xp} / {state.profile.xpMax}
                 </div>
+                <div>
+                  <strong>Gold:</strong> {state.profile.gold}
+                </div>
               </div>
             </section>
 
+            {/*Left Column: Radar Chart*/}
             <section className="panel radar-panel">
               <h2>Character Stats</h2>
               <div className="radar-wrap">
@@ -301,6 +417,21 @@ export default function Dashboard() {
               </div>
             </section>
 
+            {/*Left Column: Inventory / Gear Slots*/}
+            <section className="panel inventory">
+              <h2>Inventory</h2>
+              <div className="inventory-grid wb-three">
+                {slotsOrder.map((slot, i) =>
+                  slot ? (
+                    renderSlot(slot)
+                  ) : (
+                    <div className="slot" key={`empty-${i}`} />
+                  )
+                )}
+              </div>
+            </section>
+
+            {/*Right Column: Tasks / Calendar / Pomodoro*/}
             <section className="panel tasks tasks-tall wb-tasks">
               <div className="tabbar header-buttons">
                 <button
@@ -310,17 +441,8 @@ export default function Dashboard() {
                   Task List
                 </button>
                 <button
-                  className={`tab ${taskTab === "quests" ? "active" : ""}`}
-                  onClick={() => setTaskTab("quests")}
-                >
-                  Quests
-                </button>
-                <button
                   className={`tab ${taskTab === "calendar" ? "active" : ""}`}
-                  onClick={() => {
-                    setTaskTab("calendar");
-                    setShowIntegrations(true);
-                  }}
+                  onClick={() => setTaskTab("calendar")}
                 >
                   Calendar
                 </button>
@@ -330,45 +452,55 @@ export default function Dashboard() {
                 >
                   Pomodoro
                 </button>
-                <button
-                  className={`tab ${taskTab === "inventory" ? "active" : ""}`}
-                  onClick={() => setTaskTab("inventory")}
-                >
-                  Inventory
-                </button>
               </div>
 
-              {taskTab === "list" && <TaskBoard />}
-
-              {taskTab === "quests" && <QuestList />}
-
-                  
-              {taskTab === "calendar" && (
+              {taskTab === "list" && (
                 <>
-                  <CalendarView />
-                  <IntegrationsPopupModal
-                    isOpen={showIntegrations}
-                    onClose={() => setShowIntegrations(false)}
-                    onConnected={handleIntegrationsConnected}
-                  />
+                  {/*Task board (will notify us when the first task is created/given)*/}
+                  <TaskBoard onFirstTaskGiven={handleFirstTaskGiven} />
                 </>
               )}
-        
-              {taskTab === "pomodoro" && <PomodoroTimer />}
 
-              {taskTab === "inventory" && (
-                <div className="inventory-tab">
-                  <div className="inventory-grid wb-three">
-                    {slotsOrder.map((slot, i) =>
-                      slot ? renderSlot(slot) : <div className="slot" key={`empty-${i}`} />
-                    )}
-                  </div>
-                </div>
-              )}
+              {taskTab === "calendar" && <CalendarView />}
+              {taskTab === "pomodoro" && <PomodoroTimer />}
             </section>
           </div>
         </div>
       </div>
+
+      {/*Integrations popup:
+          - Only shows when on Task List tab
+          - Only shows when user hasn't dismissed it yet*/}
+      {taskTab === "list" && showIntegrations && (
+        <IntegrationsPopup
+          isOpen={showIntegrations}
+          onClose={handleCloseIntegrations}
+          onConnected={handleIntegrationsConnected}
+        />
+      )}
+
+      {showStarterQuestPopup && (
+  <div className="quest-modal-backdrop">
+    <div className="quest-modal">
+      <QuestCard
+        visible={true}
+        questId={STARTER_QUEST_ID}
+        label="Starter Quest: Complete your first habit"
+        rewardXp={STARTER_QUEST_XP}
+        rewardGold={STARTER_QUEST_GOLD}
+        onQuestCompleted={handleStarterQuestCompleted}
+      />
+      <button
+        className="quest-modal-close"
+        type="button"
+        onClick={() => setShowStarterQuestPopup(false)}
+      >
+        Close
+      </button>
     </div>
+  </div>
+)}
+
+     </div>
   );
 }

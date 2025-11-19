@@ -222,7 +222,7 @@ const GuildHall = () => {
   const buyItem = async (item) => {
     if (!canAfford(item.cost) || !user) return;
 
-    const goldDelta = -item.cost; // Negative because spending
+    const goldDelta = -item.cost; //Negative because spending
 
     /*1)Update backend with negative delta*/
     const result = await updateEconomy(user.id, { gold_delta: goldDelta });
@@ -335,7 +335,7 @@ const GuildHall = () => {
             }
             level={user?.level ?? 1}
             actionLabel="Return to Dashboard"
-            onAction={() => navigate("/")}
+            onAction={() => navigate("/dashboard")}
           />
         </div>
 
