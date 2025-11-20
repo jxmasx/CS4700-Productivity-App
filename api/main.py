@@ -15,7 +15,7 @@ load_dotenv()
 
 API = FastAPI(title="Questify API", version="0.1.0")
 
-API.add_middleware(SessionMiddleware, secret_key="change-this-secret")
+API.add_middleware(SessionMiddleware, secret_key=os.getenv("SESSION_SECRET", "change-this-secret"), samesite="none", secure=True)
 
 API.add_middleware(
     CORSMiddleware,

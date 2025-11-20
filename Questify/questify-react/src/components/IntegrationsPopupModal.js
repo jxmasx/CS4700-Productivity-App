@@ -25,11 +25,18 @@ const IntegrationsPopupModal = ({ isOpen, onClose, onConnected }) => {
   if (!isOpen) return null;
 
 
-  const handleConnectCalendar = () => {
-    window.location.href = API('/auth/google');
+  const handleConnectCalendar = async () => {
+    try {
+      const res = await fetch(API('/oauth/google/start'), { credentials: 'include' });
+      const data = await res.json();
+      window.location.href = data.auth_url;
+    } catch (err) {
+      console.error('Failed to start Google OAuth:', err);
+      setStatusMessage('Failed to connect to Google. Please try again.');
+    }
   };
 
-  const handleConnect = () => {
+  const handleConnect = async () => {
     if (!connectCanvas && !connectCalendar) {
       setStatusMessage(
         "Choose at least one integration, or tap Skip to continue without connecting."
@@ -42,18 +49,17 @@ const IntegrationsPopupModal = ({ isOpen, onClose, onConnected }) => {
 
     /*If Calendar is selected, starts Google OAuth via backend*/
     if (connectCalendar) {
-           if (typeof onConnected === "function") {
-        const mockedCanvasAssignments = connectCanvas ? 7 : 0;
-        onConnected({
-          canvas: connectCanvas,
-          calendar: true,
-          canvasAssignments: mockedCanvasAssignments,
-          calendarEvents: 0,
-        });
+      try {
+        const res = await fetch(API('/oauth/google/start'), { credentials: 'include' });
+        const data = await res.json();
+        setStatusMessage("Redirecting to Google to connect your calendar...");
+        window.location.href = data.auth_url;
+      } catch (err) {
+        console.error('Failed to start Google OAuth:', err);
+        setStatusMessage('Failed to connect to Google. Please try again.');
+        setIsConnecting(false);
+        return;
       }
-
-      setStatusMessage("Redirecting to Google to connect your calendar...");
-      window.location.href = API('/auth/google');
       return;
     }
 
