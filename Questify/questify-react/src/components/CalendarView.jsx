@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useUser } from "../contexts/UserContext";
 import { getCalendar, updateCalendar } from "../utils/CalendarAPI"
+import { API } from "../apiBase";
 
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
@@ -8,12 +9,6 @@ import timeGridPlugin from "@fullcalendar/timegrid";
 import listPlugin from "@fullcalendar/list";
 import interactionPlugin from "@fullcalendar/interaction";
 import rrulePlugin from "@fullcalendar/rrule";
-
-/*Backend for Google Calendar*/
-const BACKEND_BASE_URL = "http://localhost:4000";
-
-// const STORE_LOCAL_EVENTS = "qf_events_local_v2";
-// const STORE_TASKS = "qf_tasks_v1";
 
 const clampDate = (v) => {
   const d = new Date(v);
@@ -42,17 +37,6 @@ const fromLocalInputValue = (s, allDay = false) => {
 
 const weekdayNumToRRule = ["SU", "MO", "TU", "WE", "TH", "FR", "SA"];
 
-// function loadLocalEvents() {
-//   try {
-//     const raw = localStorage.getItem(STORE_LOCAL_EVENTS);
-//     if (!raw) return [];
-//     const arr = JSON.parse(raw);
-//     return Array.isArray(arr) ? arr : [];
-//   } catch {
-//     return [];
-//   }
-// }
-
 async function loadLocalEvents(user_id) {
   try {
     const data = await getCalendar(user_id);
@@ -65,29 +49,12 @@ async function loadLocalEvents(user_id) {
   }
 }
 
-// function saveLocalEvents(list) {
-//   try {
-//     localStorage.setItem(STORE_LOCAL_EVENTS, JSON.stringify(list));
-//   } catch { }
-// }
-
 function saveLocalEvents(list, user_id) {
   try {
     // localStorage.setItem(STORE_LOCAL_EVENTS, JSON.stringify(list));
     updateCalendar(user_id, {"store_local_events": JSON.stringify(list)})
   } catch { }
 }
-
-// function loadTasks() {
-//   try {
-//     const raw = localStorage.getItem(STORE_TASKS);
-//     if (!raw) return [];
-//     const t = JSON.parse(raw);
-//     return Array.isArray(t) ? t : [];
-//   } catch {
-//     return [];
-//   }
-// }
 
 async function loadTasks(user_id) {
   try {
@@ -219,7 +186,7 @@ export default function CalendarView({ date = new Date() }) {
   /*Fetches Google Calendar events from backend*/
   const loadEvents = useCallback(async () => {
     try {
-      const res = await fetch(`${BACKEND_BASE_URL}/api/google/events`, {
+      const res = await fetch(API('/google/events'), {
         credentials: "include",
       });
       if (!res.ok) {

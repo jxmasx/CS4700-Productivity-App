@@ -12,6 +12,7 @@ import QuestCard from "./components/QuestCard";
 import GuildHall from "./components/GuildHall";
 import AdventurerNamePlate from "./components/AdventurerNamePlate";
 import IntegrationsPopup from "./components/IntegrationsPopup";
+import OAuthSuccess from "./components/OAuthSuccess";
 
 function App() {
   return (
@@ -22,6 +23,7 @@ function App() {
           <Route path="/" element={<Landing />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
+          <Route path="/oauth/success" element={<OAuthSuccess />} />
           
           {/* Login Protected Routes */}
           <Route element={<ProtectedRoute />}>

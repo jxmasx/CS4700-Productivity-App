@@ -8,14 +8,12 @@
     - onConnected: (info) => void → called when user clicks Connect successfully
 
   NOTE:
-    - Calendar: redirects to http://localhost:4000/auth/google (Google OAuth).
+    - Calendar: redirects to the backend /api/auth/google (Google OAuth).
     - Canvas: still mocked for now.
  -----------------------------------------------------------------------------*/
 
 import React, { useState } from "react";
-
-/*Backend base URL for the calendar OAuth server*/
-const BACKEND_BASE_URL = "http://localhost:4000";
+import { API } from "../apiBase";
 
 const IntegrationsPopupModal = ({ isOpen, onClose, onConnected }) => {
   const [connectCanvas, setConnectCanvas] = useState(false);
@@ -27,10 +25,9 @@ const IntegrationsPopupModal = ({ isOpen, onClose, onConnected }) => {
   if (!isOpen) return null;
 
 
-  function handleConnectCalendar() {
-  /*Opens Google OAuth in the same tab or a popup*/
-    window.location.href = `${BACKEND_BASE_URL}/auth/google`;
-}
+  const handleConnectCalendar = () => {
+    window.location.href = API('/auth/google');
+  };
 
   const handleConnect = () => {
     if (!connectCanvas && !connectCalendar) {
@@ -56,7 +53,7 @@ const IntegrationsPopupModal = ({ isOpen, onClose, onConnected }) => {
       }
 
       setStatusMessage("Redirecting to Google to connect your calendar...");
-      window.location.href = `${BACKEND_BASE_URL}/auth/google`;
+      window.location.href = API('/auth/google');
       return;
     }
 
