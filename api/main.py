@@ -15,15 +15,15 @@ load_dotenv()
 
 API = FastAPI(title="Questify API", version="0.1.0")
 
-API.add_middleware(SessionMiddleware, secret_key=os.getenv("SESSION_SECRET", "change-this-secret"), samesite="none", secure=True)
-
 API.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://jxmasx.github.io"],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+API.add_middleware(SessionMiddleware, secret_key=os.getenv("SESSION_SECRET", "change-this-secret"), samesite="none", secure=True)
 
 @API.get("/api/health")
 def health():
