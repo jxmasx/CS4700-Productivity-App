@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Request, Header
 from fastapi.responses import RedirectResponse
 from google_auth_oauthlib.flow import Flow
 from google.oauth2.credentials import Credentials
@@ -7,6 +7,7 @@ from googleapiclient.discovery import build
 from datetime import datetime, timedelta
 import os
 from dotenv import load_dotenv
+import jwt
 
 load_dotenv()
 
@@ -62,13 +63,28 @@ async def auth_google_callback(request: Request, code: str, state: str):
         'scopes': creds.scopes
     }
     
+    # Create JWT for frontend
+    secret = os.getenv("SESSION_SECRET", "change-this-secret")
+    tokens = request.session['google_tokens']
+    token = jwt.encode({'google_tokens': tokens}, secret, algorithm='HS256')
+    
     # Redirect back to React app
     frontend_origin = os.getenv("FRONTEND_ORIGIN", "http://localhost:3000")
-    return RedirectResponse(f"{frontend_origin}/#/oauth/success")
+    return RedirectResponse(f"{frontend_origin}/#/oauth/success?token={token}")
 
 @router.get("/google/events")
-async def get_google_events(request: Request):
-    tokens = request.session.get('google_tokens')
+async def get_google_events(request: Request, authorization: str = Header(None)):
+    tokens = None
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization.split(" ")[1]
+        secret = os.getenv("SESSION_SECRET", "change-this-secret")
+        try:
+            payload = jwt.decode(token, secret, algorithms=['HS256'])
+            tokens = payload['google_tokens']
+        except:
+            pass
+    if not tokens:
+        tokens = request.session.get('google_tokens')
     if not tokens:
         raise HTTPException(status_code=401, detail="Google Calendar not connected")
     
@@ -76,8 +92,8 @@ async def get_google_events(request: Request):
     
     if creds.expired and creds.refresh_token:
         creds.refresh(GoogleRequest())
-        # Update session with refreshed tokens
-        request.session['google_tokens'] = {
+        # Update tokens
+        updated_tokens = {
             'token': creds.token,
             'refresh_token': creds.refresh_token,
             'token_uri': creds.token_uri,
@@ -85,6 +101,11 @@ async def get_google_events(request: Request):
             'client_secret': creds.client_secret,
             'scopes': creds.scopes
         }
+        if authorization:
+            # Can't update JWT, but for session
+            pass
+        else:
+            request.session['google_tokens'] = updated_tokens
     
     service = build('calendar', 'v3', credentials=creds)
     

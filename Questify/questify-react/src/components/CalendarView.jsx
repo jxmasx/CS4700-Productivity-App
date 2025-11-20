@@ -186,8 +186,11 @@ export default function CalendarView({ date = new Date() }) {
   /*Fetches Google Calendar events from backend*/
   const loadEvents = useCallback(async () => {
     try {
+      const token = localStorage.getItem('google_token');
+      const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
       const res = await fetch(API('/google/events'), {
         credentials: "include",
+        headers,
       });
       if (!res.ok) {
         console.warn("Google events fetch failed with status:", res.status);
