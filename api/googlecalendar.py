@@ -131,4 +131,5 @@ async def get_google_events(request: Request, authorization: str = Header(None))
             'allDay': 'dateTime' not in event['start']
         })
     
+    print("Formatted events:", formatted_events)
     return formatted_events
