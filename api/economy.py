@@ -35,20 +35,20 @@ async def update_economy(user_id: int, economy: EconomyUpdate, db: Session = Dep
         user.level += 1
         user.xp_max = int(user.xp_max * 1.15 + 25)
     
-    if user.xp < 0:
-        user.xp = 0
-    if user.gold < 0:
-        user.gold = 0
-    if user.strength < 0:
-        user.strength = 0
-    if user.dexterity < 0:
-        user.dexterity = 0
-    if user.intelligence < 0:
-        user.intelligence = 0
-    if user.wisdom < 0:
-        user.wisdom = 0
-    if user.charisma < 0:
-        user.charisma = 0
+    # if user.xp < 0:
+    #     user.xp = 0
+    # if user.gold < 0:
+    #     user.gold = 0
+    # if user.strength < 0:
+    #     user.strength = 0
+    # if user.dexterity < 0:
+    #     user.dexterity = 0
+    # if user.intelligence < 0:
+    #     user.intelligence = 0
+    # if user.wisdom < 0:
+    #     user.wisdom = 0
+    # if user.charisma < 0:
+    #     user.charisma = 0
     
     try:
         db.commit()
