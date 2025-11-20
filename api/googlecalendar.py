@@ -89,9 +89,10 @@ async def get_google_events(request: Request, authorization: str = Header(None))
         raise HTTPException(status_code=401, detail="Google Calendar not connected")
     
     creds = Credentials(**tokens)
-    
+    refreshed = False
     if creds.expired and creds.refresh_token:
         creds.refresh(GoogleRequest())
+        refreshed = True
         # Update tokens
         updated_tokens = {
             'token': creds.token,
@@ -102,8 +103,9 @@ async def get_google_events(request: Request, authorization: str = Header(None))
             'scopes': creds.scopes
         }
         if authorization:
-            # Can't update JWT, but for session
-            pass
+            # For JWT, create new JWT
+            new_token = jwt.encode({'google_tokens': updated_tokens}, secret, algorithm='HS256')
+            request.session['google_tokens'] = updated_tokens  # Also update session if available
         else:
             request.session['google_tokens'] = updated_tokens
     
@@ -132,4 +134,8 @@ async def get_google_events(request: Request, authorization: str = Header(None))
         })
     
     print("Formatted events:", formatted_events)
-    return formatted_events
+    response = formatted_events
+    if refreshed and authorization:
+        # Return new JWT in response
+        response = {"events": formatted_events, "new_token": new_token}
+    return response
