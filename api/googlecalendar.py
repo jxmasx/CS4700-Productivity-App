@@ -64,7 +64,7 @@ async def auth_google_callback(request: Request, code: str, state: str):
     
     # Redirect back to React app
     frontend_origin = os.getenv("FRONTEND_ORIGIN", "http://localhost:3000")
-    return RedirectResponse(f"{frontend_origin}/oauth/success")
+    return RedirectResponse(f"{frontend_origin}/#/oauth/success")
 
 @router.get("/google/events")
 async def get_google_events(request: Request):
