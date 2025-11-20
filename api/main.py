@@ -17,13 +17,13 @@ API = FastAPI(title="Questify API", version="0.1.0")
 
 API.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://jxmasx.github.io", "https://jxmasx.github.io/", "https://jxmasx.github.io/CS4700-Productivity-App"],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-API.add_middleware(SessionMiddleware, secret_key=os.getenv("SESSION_SECRET", "change-this-secret"), same_site="none", https_only=True)
+API.add_middleware(SessionMiddleware, secret_key=os.getenv("SESSION_SECRET", "change-this-secret"))
 
 @API.get("/api/health")
 def health():
