@@ -23,7 +23,7 @@ API.add_middleware(
     allow_headers=["*"],
 )
 
-API.add_middleware(SessionMiddleware, secret_key=os.getenv("SESSION_SECRET", "change-this-secret"))
+API.add_middleware(SessionMiddleware, secret_key=os.getenv("SESSION_SECRET", "change-this-secret"), samesite="none", secure=True)
 
 @API.get("/api/health")
 def health():
