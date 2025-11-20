@@ -19,8 +19,7 @@ API.add_middleware(SessionMiddleware, secret_key="change-this-secret")
 
 API.add_middleware(
     CORSMiddleware,
-    # allow_origins=[os.getenv("FRONTEND_ORIGIN", "http://localhost:3000")],
-    allow_origins=["*"],
+    allow_origins=["https://jxmasx.github.io"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
